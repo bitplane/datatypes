@@ -4,13 +4,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-enum tga_result {
-    TGA_OK = 0,
-    TGA_INVALID,
-    TGA_TRUNCATED,
-    TGA_TOO_LARGE,
-    TGA_NO_MEMORY
-};
+#include "common/result.h"
 
 struct tga_image {
     unsigned width;
@@ -18,8 +12,8 @@ struct tga_image {
     uint8_t *rgba;
 };
 
-enum tga_result tga_decode(const uint8_t *data, size_t length,
-                           struct tga_image *image);
+enum codec_result tga_decode(const uint8_t *data, size_t length,
+                             struct tga_image *image);
 void tga_free(struct tga_image *image);
 
 #endif

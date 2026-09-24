@@ -75,7 +75,7 @@ static int color(uint8_t *rgba, const uint8_t *src, unsigned depth,
     }
 }
 
-static enum tga_result read_pixel(struct reader *r, uint8_t *rgba,
+static enum codec_result read_pixel(struct reader *r, uint8_t *rgba,
                                   unsigned image_type, unsigned depth,
                                   unsigned attribute_bits,
                                   const uint8_t *palette,
@@ -86,18 +86,18 @@ static enum tga_result read_pixel(struct reader *r, uint8_t *rgba,
     unsigned bytes = (depth + 7u) / 8u;
     unsigned index;
     if (bytes == 0 || bytes > sizeof raw)
-        return TGA_INVALID;
+        return CODEC_INVALID;
     if (!take(r, raw, bytes))
-        return TGA_TRUNCATED;
+        return CODEC_TRUNCATED;
     if (image_type == 1) {
         index = depth == 8 ? raw[0] : le16(raw);
         if (index < palette_first || index - palette_first >= palette_count)
-            return TGA_INVALID;
+            return CODEC_INVALID;
         memcpy(rgba, palette + (index - palette_first) * 4u, 4);
     } else if (!color(rgba, raw, depth, image_type == 3, attribute_bits)) {
-        return TGA_INVALID;
+        return CODEC_INVALID;
     }
-    return TGA_OK;
+    return CODEC_OK;
 }
 
 void tga_free(struct tga_image *image)
@@ -107,7 +107,7 @@ void tga_free(struct tga_image *image)
     image->width = image->height = 0;
 }
 
-enum tga_result tga_decode(const uint8_t *data, size_t length,
+enum codec_result tga_decode(const uint8_t *data, size_t length,
                            struct tga_image *image)
 {
     struct reader r;
@@ -118,20 +118,20 @@ enum tga_result tga_decode(const uint8_t *data, size_t length,
     unsigned i, n, packet, run, source_x, source_y, dest_x, dest_y;
     unsigned alpha_type = 3;
     size_t pixels, offset;
-    enum tga_result result;
+    enum codec_result result;
 
     if (image == NULL)
-        return TGA_INVALID;
+        return CODEC_INVALID;
     image->width = image->height = 0;
     image->rgba = NULL;
     if (data == NULL || length < 18)
-        return TGA_TRUNCATED;
+        return CODEC_TRUNCATED;
     type = data[2];
     base_type = type >= 8 ? type - 8 : type;
     if ((type != 1 && type != 2 && type != 3 &&
          type != 9 && type != 10 && type != 11) ||
         data[1] > 1u || (base_type == 1 && data[1] != 1u))
-        return TGA_INVALID;
+        return CODEC_INVALID;
     palette_first = le16(data + 3);
     palette_count = le16(data + 5);
     palette_depth = data[7];
@@ -145,57 +145,57 @@ enum tga_result tga_decode(const uint8_t *data, size_t length,
         if (extension != 0) {
             if (extension > length - 26 || length - 26 - extension < 495 ||
                 le16(data + extension) < 495)
-                return TGA_INVALID;
+                return CODEC_INVALID;
             alpha_type = data[extension + 494];
         }
     }
     if (width == 0 || height == 0 || (descriptor & 0xc0u) != 0)
-        return TGA_INVALID;
+        return CODEC_INVALID;
     if ((base_type == 1 && (depth != 8 && depth != 16)) ||
         (base_type == 2 && (depth != 15 && depth != 16 &&
                             depth != 24 && depth != 32)) ||
         (base_type == 3 && (depth != 8 && depth != 16)))
-        return TGA_INVALID;
+        return CODEC_INVALID;
     if (base_type == 1 && (palette_count == 0 ||
         (palette_depth != 8 && palette_depth != 15 &&
          palette_depth != 16 && palette_depth != 24 && palette_depth != 32) ||
         palette_first + palette_count > 65536u))
-        return TGA_INVALID;
+        return CODEC_INVALID;
     pixels = (size_t)width * height;
     if (pixels > TGA_MAX_PIXELS)
-        return TGA_TOO_LARGE;
+        return CODEC_TOO_LARGE;
     r.data = data;
     r.size = length;
     r.pos = 18;
     if (!take(&r, NULL, data[0]))
-        return TGA_TRUNCATED;
+        return CODEC_TRUNCATED;
     /* True-colour and grayscale images may carry an unused colour map. */
     if (base_type != 1 && data[1] == 1u &&
         !take(&r, NULL, (size_t)palette_count * ((palette_depth + 7u) / 8u)))
-        return TGA_TRUNCATED;
+        return CODEC_TRUNCATED;
     if (base_type == 1) {
         palette = malloc((size_t)palette_count * 4u);
         if (palette == NULL)
-            return TGA_NO_MEMORY;
+            return CODEC_NO_MEMORY;
         palette_bytes = (palette_depth + 7u) / 8u;
         for (i = 0; i < palette_count; i++) {
             uint8_t raw[4];
             if (!take(&r, raw, palette_bytes)) {
-                result = TGA_TRUNCATED;
+                result = CODEC_TRUNCATED;
                 goto fail;
             }
             /* Palette alpha counts only when the pixels declare attribute bits. */
             if (!color(palette + i * 4u, raw, palette_depth, 0,
                        (descriptor & 15u) == 0 ? 0u :
                        palette_depth == 16 ? 1u : palette_depth == 32 ? 8u : 0u)) {
-                result = TGA_INVALID;
+                result = CODEC_INVALID;
                 goto fail;
             }
         }
     }
     image->rgba = malloc(pixels * 4u);
     if (image->rgba == NULL) {
-        result = TGA_NO_MEMORY;
+        result = CODEC_NO_MEMORY;
         goto fail;
     }
     image->width = width;
@@ -203,7 +203,7 @@ enum tga_result tga_decode(const uint8_t *data, size_t length,
     for (i = 0; i < pixels;) {
         if (type >= 8) {
             if (!take(&r, pixel, 1)) {
-                result = TGA_TRUNCATED;
+                result = CODEC_TRUNCATED;
                 goto fail;
             }
             packet = pixel[0];
@@ -214,14 +214,14 @@ enum tga_result tga_decode(const uint8_t *data, size_t length,
             run = 0;
         }
         if (n > pixels - i) {
-            result = TGA_INVALID;
+            result = CODEC_INVALID;
             goto fail;
         }
         if (run) {
             result = read_pixel(&r, pixel, base_type, depth,
                                 descriptor & 15u, palette,
                                 palette_first, palette_count);
-            if (result != TGA_OK)
+            if (result != CODEC_OK)
                 goto fail;
         }
         while (n-- != 0) {
@@ -229,7 +229,7 @@ enum tga_result tga_decode(const uint8_t *data, size_t length,
                 result = read_pixel(&r, pixel, base_type, depth,
                                     descriptor & 15u, palette,
                                     palette_first, palette_count);
-                if (result != TGA_OK)
+                if (result != CODEC_OK)
                     goto fail;
             }
             source_x = i % width;
@@ -259,7 +259,7 @@ enum tga_result tga_decode(const uint8_t *data, size_t length,
         }
     }
     free(palette);
-    return TGA_OK;
+    return CODEC_OK;
 fail:
     free(palette);
     tga_free(image);

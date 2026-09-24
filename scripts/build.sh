@@ -4,7 +4,7 @@ set -eu
 target=${1:?usage: build.sh <target> [datatype]}
 datatype=${2:-targa}
 case "$target" in i386-aros|aarch64-aros|x86_64-aros|m68k-aros) ;; *) exit 2 ;; esac
-case "$datatype" in targa|pcx|qoi) ;; *) echo "Unknown datatype: $datatype" >&2; exit 2 ;; esac
+[ -f "formats/$datatype/$datatype.conf" ] || { echo "Unknown datatype: $datatype" >&2; exit 2; }
 : "${AROS_SOURCE:=/opt/mountin/source}"
 : "${AROS_CC:=aros-cc}"
 
@@ -34,13 +34,25 @@ fi
 config="formats/$datatype/$datatype.conf"
 "$generator" -c "$config" -d "$work" writelibdefs "$datatype" datatype
 "$generator" -c "$config" -d "$work" writefiles "$datatype" datatype
-"$AROS_CC" -std=gnu11 -Wall -Wextra -Werror "$@" -c \
+"$AROS_CC" -std=gnu11 -Wall -Wextra -Werror -I. "$@" -c \
     "formats/$datatype/${datatype}class.c" -o "$work/class.o"
-"$AROS_CC" -std=c99 -Wall -Wextra -Werror -c \
-    "formats/$datatype/decode.c" -o "$work/decode.o"
-"$AROS_CC" -std=c99 -Wall -Wextra -Werror -c \
-    "formats/$datatype/encode.c" -o "$work/encode.o"
+objects=
+for source in "formats/$datatype"/*.c; do
+    case "$source" in *class.c) continue ;; esac
+    object="$work/$(basename "$source" .c).o"
+    "$AROS_CC" -std=c99 -Wall -Wextra -Werror -I. -c "$source" -o "$object"
+    objects="$objects $object"
+done
+# Link only the shared modules whose headers this format includes.
+mkdir -p "$work/common"
+for header in $(grep -ho '"common/[a-z0-9_]*\.h"' "formats/$datatype"/*.[ch] | tr -d '"' | sort -u); do
+    source=${header%.h}.c
+    [ -f "$source" ] || continue
+    object="$work/common/$(basename "$source" .c).o"
+    "$AROS_CC" -std=gnu11 -Wall -Wextra -Werror -I. "$@" -c "$source" -o "$object"
+    objects="$objects $object"
+done
 "$AROS_CC" -I"$work" -c "$work/${datatype}_start.c" -o "$work/start.o"
 "$AROS_CC" -I"$work" -c "$work/${datatype}_end.c" -o "$work/end.o"
-"$AROS_CC" -nostartfiles "$work/start.o" "$work/class.o" \
-    "$work/decode.o" "$work/encode.o" "$work/end.o" -lstdc_rel -o "$output/$datatype.datatype"
+"$AROS_CC" -nostartfiles "$work/start.o" "$work/class.o" $objects \
+    "$work/end.o" -lstdc_rel -o "$output/$datatype.datatype"

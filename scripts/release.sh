@@ -4,7 +4,7 @@ set -eu
 package=${1:-targa}
 level=${2:-minor}
 dry_run=${3:-0}
-case "$package" in targa|pcx|qoi) ;; *) echo "Unknown datatype: $package" >&2; exit 2 ;; esac
+[ -f "formats/$package/$package.conf" ] || { echo "Unknown datatype: $package" >&2; exit 2; }
 case "$level" in current|minor|major) ;; *) exit 2 ;; esac
 case "$dry_run" in 0|1) ;; *) exit 2 ;; esac
 config="formats/$package/$package.conf"
@@ -33,7 +33,8 @@ if [ "$dry_run" = 1 ]; then
     exit 0
 fi
 if [ "$next" != "$current" ]; then
-    sed "s/^version $current$/version $next/" "$config" > "$config.tmp"
+    sed -e "s/^version $current$/version $next/" \
+        -e "s/^date .*/date $(date -u +%d.%m.%Y)/" "$config" > "$config.tmp"
     mv "$config.tmp" "$config"
     git add "$config"
     git commit -m "Release $package $next"

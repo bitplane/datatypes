@@ -45,7 +45,7 @@ void pcx_free(struct pcx_image *image)
     image->width = image->height = 0;
 }
 
-enum pcx_result pcx_decode(const uint8_t *data, size_t length,
+enum codec_result pcx_decode(const uint8_t *data, size_t length,
                            struct pcx_image *image)
 {
     unsigned width, height, bits, planes, bytes_per_line, encoding;
@@ -54,37 +54,37 @@ enum pcx_result pcx_decode(const uint8_t *data, size_t length,
     size_t pixels, row_bytes, pos = 128, limit = length;
     uint8_t *row, repeat = 0, value;
     const uint8_t *palette = NULL;
-    enum pcx_result result = PCX_OK;
+    enum codec_result result = CODEC_OK;
 
     if (image == NULL)
-        return PCX_INVALID;
+        return CODEC_INVALID;
     image->width = image->height = 0;
     image->rgba = NULL;
     if (data == NULL || length < 128)
-        return PCX_TRUNCATED;
+        return CODEC_TRUNCATED;
     if (data[0] != 0x0a || (data[1] != 0 && data[1] != 2 &&
         data[1] != 3 && data[1] != 4 && data[1] != 5) ||
         data[2] > 1 || data[64] != 0)
-        return PCX_INVALID;
+        return CODEC_INVALID;
     bits = data[3]; planes = data[65]; encoding = data[2];
     palette_info = le16(data + 68);
     if (le16(data + 8) < le16(data + 4) ||
         le16(data + 10) < le16(data + 6))
-        return PCX_INVALID;
+        return CODEC_INVALID;
     width = le16(data + 8) - le16(data + 4) + 1u;
     height = le16(data + 10) - le16(data + 6) + 1u;
     if (width > 65535u || height > 65535u ||
         (size_t)width * height > PCX_MAX_PIXELS)
-        return PCX_TOO_LARGE;
+        return CODEC_TOO_LARGE;
     if (!((planes == 1 && (bits == 1 || bits == 2 || bits == 4 || bits == 8)) ||
           (bits == 1 && planes >= 2 && planes <= 4) ||
           (bits == 8 && planes == 3)))
-        return PCX_INVALID;
+        return CODEC_INVALID;
     bytes_per_line = le16(data + 66);
     min_bytes = (width * bits + 7u) / 8u;
     if (bytes_per_line == 0 || (bytes_per_line & 1u) != 0 ||
         bytes_per_line < min_bytes)
-        return PCX_INVALID;
+        return CODEC_INVALID;
     row_bytes = (size_t)bytes_per_line * planes;
     pixels = (size_t)width * height;
     if (bits == 8 && planes == 1) {
@@ -92,7 +92,7 @@ enum pcx_result pcx_decode(const uint8_t *data, size_t length,
             palette = data + length - 768;
             limit = length - 769;
         } else if (palette_info != 2) {
-            return PCX_INVALID;
+            return CODEC_INVALID;
         }
     } else if (bits < 8) {
         for (p = 0; p < 48; p++)
@@ -101,17 +101,17 @@ enum pcx_result pcx_decode(const uint8_t *data, size_t length,
     }
     row = malloc(row_bytes);
     if (row == NULL)
-        return PCX_NO_MEMORY;
+        return CODEC_NO_MEMORY;
     image->rgba = malloc(pixels * 4u);
     if (image->rgba == NULL) {
         free(row);
-        return PCX_NO_MEMORY;
+        return CODEC_NO_MEMORY;
     }
     image->width = width; image->height = height;
     for (y = 0; y < height; y++) {
         for (p = 0; p < row_bytes; p++) {
             if (!next_byte(data, limit, &pos, encoding, &run, &repeat, &value)) {
-                result = PCX_TRUNCATED;
+                result = CODEC_TRUNCATED;
                 goto done;
             }
             row[p] = value;
@@ -146,7 +146,7 @@ enum pcx_result pcx_decode(const uint8_t *data, size_t length,
     }
 done:
     free(row);
-    if (result != PCX_OK)
+    if (result != CODEC_OK)
         pcx_free(image);
     return result;
 }
