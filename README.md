@@ -93,6 +93,19 @@ A file holds several images. `PDTA_WhichPicture` picks one by its position among
 Saves a one-image ICNS file when the picture is square: 24-bit packed with an 8-bit mask at 16, 32, 48 and 128 pixels, and PNG at 64, 256, 512 and 1024 pixels. Other sizes can't be saved. The package includes its `Devs/DataTypes/ICNS` descriptor, which matches the `icns` magic on files named `#?.icns`.
 `formats/icns/ICNS.dtyp` is the compiled form of `ICNS.dtd`; regenerate it with AROS's `createdtdesc -o formats/icns/ICNS.dtyp formats/icns/ICNS.dtd` if the recognition rules change.
 
+## FAX
+
+Reads raw CCITT Group 3 fax files with one-dimensional (MH) coding, and CALS type 1 rasters, whose 2048-byte text header is followed by Group 4 (T.6) data. Images load as one-plane pictures, black on white.
+
+- **Group 3:** bits may be stored first-to-last (as T.4 sends them) or last-to-first (as many modems save them); the loader works out which. The image is as wide as its longest line, and shorter lines are padded with white. Anything before the first EOL is skipped, the page ends at RTC or at the end of the data, and an empty line mid-page is a white row. Like `g3topbm`, a line with a bad code keeps the part that decoded and the page carries on from the next EOL, so received faxes with line noise still load. Only the first page of a file with several is shown.
+- **CALS:** `rpelcnt` gives the size and `rorient` the orientation, which is applied as MIL-PRF-28002 describes it: the pel path and line progression angles, counter-clockwise.
+- **Not supported:** Group 3 two-dimensional (MR) coding, raw Group 4 files (they don't record their width), CALS type 2 (tiled) rasters, and the Digifax header some fax software adds.
+
+Saves raw Group 3 MH at the picture's own width, bits first-to-last, with an EOL before each line and RTC at the end. Pixels are composited over white, then set black if their luminance is under half. Fax machines expect 1728-pixel lines, so pad the picture to that width first if the file is to be sent.
+
+The package includes its `Devs/DataTypes/FAX` descriptor. Raw G3 has no magic number and CALS starts with text, so the one descriptor matches files named `.g3`, `.fax`, `.cal`, `.cals` or `.ct1`, at priority -10.
+`formats/fax/FAX.dtyp` is the compiled form of `FAX.dtd`; regenerate it with AROS's `createdtdesc -o formats/fax/FAX.dtyp formats/fax/FAX.dtd` if the recognition rules change.
+
 ## Build and test
 
 ```sh
