@@ -1,6 +1,6 @@
 PACKAGE ?= targa
 FORMATS := $(notdir $(wildcard formats/*))
-TESTFLAGS = -std=c99 -Wall -Wextra -Werror -fsanitize=address,undefined -fno-omit-frame-pointer
+TESTFLAGS = -std=c99 -I. -Wall -Wextra -Werror -fsanitize=address,undefined -fno-omit-frame-pointer
 
 .PHONY: test build release
 
