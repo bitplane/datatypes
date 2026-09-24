@@ -120,13 +120,18 @@ static int parse_number(const uint8_t *text, size_t length, unsigned long *value
 static int is_real(const uint8_t *text, size_t length)
 {
     size_t i = 0, digits = 0;
+    int nonzero = 0;
     if (i < length && (text[i] == '+' || text[i] == '-'))
         i++;
-    for (; i < length && is_digit(text[i]); i++)
+    for (; i < length && is_digit(text[i]); i++) {
         digits++;
+        nonzero |= text[i] != '0';
+    }
     if (i < length && text[i] == '.')
-        for (i++; i < length && is_digit(text[i]); i++)
+        for (i++; i < length && is_digit(text[i]); i++) {
             digits++;
+            nonzero |= text[i] != '0';
+        }
     if (digits == 0)
         return 0;
     if (i < length && (text[i] == 'e' || text[i] == 'E')) {
@@ -138,7 +143,7 @@ static int is_real(const uint8_t *text, size_t length)
         while (i < length && is_digit(text[i]))
             i++;
     }
-    return i == length;
+    return i == length && nonzero;
 }
 
 static enum codec_result check_size(const struct header *h)
@@ -408,7 +413,7 @@ static enum codec_result decode_image(const uint8_t *data, const struct header *
 {
     size_t x, y, i, row_bytes = (size_t)h->width * h->pixel_bytes;
     unsigned planes = model_planes[h->model];
-    uint8_t *rgba, *q, c[5], alpha = 0;
+    uint8_t *rgba, *q, c[5];
     const uint8_t *p;
     float value;
 
@@ -448,13 +453,8 @@ static enum codec_result decode_image(const uint8_t *data, const struct header *
                 q[3] = h->model == CMYK_ALPHA ? c[4] : 255;
                 break;
             }
-            alpha |= q[3];
         }
     }
-    /* Alpha that is zero everywhere was declared but never filled in. */
-    if (alpha == 0)
-        for (i = 3; i < (size_t)h->width * h->height * 4u; i += 4)
-            rgba[i] = 255;
     image->width = (unsigned)h->width;
     image->height = (unsigned)h->height;
     image->rgba = rgba;

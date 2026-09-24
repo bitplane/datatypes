@@ -143,17 +143,19 @@ static void test_pam_alpha(void)
 {
     const uint8_t opaque[8] = {1,2,3,255, 4,5,6,255};
     const uint8_t gray[8] = {10,10,10,255, 200,200,200,255};
+    const uint8_t transparent[8] = {1,2,3,0, 4,5,6,0};
+    const uint8_t gray_transparent[8] = {10,10,10,0, 200,200,200,0};
     size_t length;
 
-    /* Declared alpha that is zero everywhere is shown opaque. */
+    /* Declared alpha that is zero everywhere stays transparent. */
     length = pam("P7\nWIDTH 2\nHEIGHT 1\nDEPTH 4\nMAXVAL 255\n"
                  "TUPLTYPE RGB_ALPHA\nENDHDR\n",
                  (const uint8_t *)"\1\2\3\0\4\5\6\0", 8);
-    expect(buffer, length, opaque, 2, 1);
+    expect(buffer, length, transparent, 2, 1);
     length = pam("P7\nWIDTH 2\nHEIGHT 1\nDEPTH 2\nMAXVAL 255\n"
                  "TUPLTYPE GRAYSCALE_ALPHA\nENDHDR\n",
                  (const uint8_t *)"\x0a\0\xc8\0", 4);
-    expect(buffer, length, gray, 2, 1);
+    expect(buffer, length, gray_transparent, 2, 1);
     /* Without a tuple type saying so, extra planes are not alpha. */
     length = pam("P7\nWIDTH 2\nHEIGHT 1\nDEPTH 4\nMAXVAL 255\nENDHDR\n",
                  (const uint8_t *)"\1\2\3\x80\4\5\6\0", 8);
@@ -299,7 +301,7 @@ static void test_float_maps(void)
                                    118,118,118,255, 254,254,254,255,
                                    255,255,255,255, 255,255,255,255, 0,0,0,255};
     const float zero_alpha[4] = {1.0f, 1.0f, 1.0f, 0.0f};
-    const uint8_t white[4] = {255,255,255,255};
+    const uint8_t white[4] = {255,255,255,0};
     size_t length;
 
     length = pfm("PF\n2 2\n-1.0\n", colour, 12, 1);
@@ -317,6 +319,7 @@ static void test_float_maps(void)
     expect_truncated_prefixes(buffer, length);
     length = pfm("PF4\n1 1\n-1.0\n", zero_alpha, 4, 1);
     expect(buffer, length, white, 1, 1);
+    assert(decode(buffer, pfm("PF\n1 1\n0.0\n", colour, 3, 0), 0) == CODEC_INVALID);
     length = pfm("Pf\n8 1\n-1.0\n", gray, 8, 1);
     expect(buffer, length, gray_rgba, 8, 1);
     /* Any whitespace separates the numbers, and one byte ends the header. */
