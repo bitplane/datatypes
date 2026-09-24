@@ -1,0 +1,8 @@
+Name=ICNS
+BaseName=icns
+Pattern=#?.icns
+Mask='i' 'c' 'n' 's'
+GroupID=pict
+ID=icns
+Flags=DTF_BINARY,DTF_CASE
+Priority=0

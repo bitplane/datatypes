@@ -29,6 +29,7 @@ Nothing lists the formats. `make test`, `scripts/build.sh`, `scripts/release.sh`
 | `result.h` | codecs | `enum codec_result` |
 | `dtfile.[ch]` | any file-based datatype | `dt_new`, `dt_read_file`, `dt_error`, `dt_set_name`, `dt_write` |
 | `dtpicture.[ch]` | picture datatypes | `dt_put_rgba`, `dt_picture_size`, `dt_each_row` |
+| `zlib.[ch]` | codecs | `zlib_inflate`, `zlib_deflate`, `zlib_deflate_bound`: one-shot zlib streams through `z1.library`, or the system zlib in host tests |
 
 - It's a library, not a framework. Use what fits and write format-specific code where it doesn't. A streaming or non-picture format shouldn't bend to fit these helpers.
 - `build.sh` links `common/X.c` only when a file in the format includes `"common/X.h"`. It does not follow includes transitively, so include every common header you use directly.

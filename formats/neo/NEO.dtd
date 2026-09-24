@@ -1,0 +1,8 @@
+Name=NEOchrome
+BaseName=neo
+Pattern=#?.neo
+Mask=0x00 0x00 0x00
+GroupID=pict
+ID=neoc
+Flags=DTF_BINARY,DTF_CASE
+Priority=-10
