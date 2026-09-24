@@ -1,0 +1,7 @@
+Name=XWD
+BaseName=xwd
+Pattern=#?.xwd
+GroupID=pict
+ID=_xwd
+Flags=DTF_BINARY,DTF_CASE
+Priority=0
