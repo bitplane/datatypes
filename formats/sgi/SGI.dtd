@@ -1,0 +1,8 @@
+Name=SGI
+BaseName=sgi
+Pattern=#?.(rgb|rgba|bw|sgi|int|inta)
+Mask=0x01 0xda
+GroupID=pict
+ID=_sgi
+Flags=DTF_BINARY,DTF_CASE
+Priority=0
