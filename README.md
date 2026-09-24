@@ -10,6 +10,11 @@ Reads colour-mapped, true-colour and grayscale TGA files, including RLE images. 
 
 Reads packed and planar indexed PCX, 8-bit indexed PCX, and 24-bit RGB PCX. Saves 24-bit RGB PCX, compositing transparency over white. AROS's `Devs/DataTypes/PCX` descriptor selects the class.
 
+## DCX
+
+Reads DCX (multi-page PCX) files: a directory of up to 1024 page offsets, each pointing to a PCX image. Pages can be 1, 2 or 4-bit packed, 1-bit planar with 2 to 4 planes, 8-bit indexed or gray, 24-bit RGB, or 32-bit RGBA with its alpha kept. Each 8-bit page uses the palette at the end of that page. Odd bytes per line, as ImageMagick and netpbm write them, are accepted. 1-bit pages whose two palette colours are equal load black and white, and pages without a palette use netpbm's default colours. `PDTA_WhichPicture` picks a page in directory order, the first by default, and `PDTA_GetNumPictures` returns the page count. Saves a one-page DCX holding a 24-bit RGB PCX, compositing transparency over white, with the full 1024-entry directory ImageMagick writes. Other depth and plane combinations, such as 16-bit or 2-bit planar pages, are rejected.
+The package includes its `Devs/DataTypes/DCX` descriptor, which recognises files by their `B1 68 DE 3A` magic whatever their name. `formats/dcx/DCX.dtyp` is the compiled form of `DCX.dtd`; regenerate it with AROS's `createdtdesc -o formats/dcx/DCX.dtyp formats/dcx/DCX.dtd` if the recognition rules change.
+
 ## QOI
 
 Reads and saves QOI RGB and RGBA images. The package includes its `Devs/DataTypes/QOI` descriptor.
