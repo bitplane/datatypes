@@ -73,6 +73,15 @@ static void expect_extension_alpha(unsigned type, const uint8_t expected[4])
     data[footer] = (uint8_t)extension;
     memcpy(data + footer + 8, "TRUEVISION-XFILE.\0", 18);
     expect(data, sizeof data, expected, 1, 1);
+    data[21] = 0;
+    {
+        const uint8_t transparent[4] = {64, 32, 16, 0};
+        const uint8_t opaque[4] = {64, 32, 16, 255};
+        const uint8_t premultiplied[4] = {0, 0, 0, 0};
+        expect(data, sizeof data,
+               type == 4 ? premultiplied : type >= 2 ? transparent : opaque,
+               1, 1);
+    }
     data[footer] = 255;
     data[footer + 1] = 255;
     assert(tga_decode(data, sizeof data, &image) == TGA_INVALID);
@@ -135,11 +144,56 @@ int main(void)
     header(data, 2, 1, 1, 16, 0x21);
     data[18] = 0; data[19] = 0xfc; /* opaque red in 5:5:5:1 */
     expect(data, 20, red, 1, 1);
-    data[19] = 0x7c;
+    data[19] = 0x7c; /* declared alpha bit is clear */
     {
         const uint8_t transparent_red[4] = {255, 0, 0, 0};
         expect(data, 20, transparent_red, 1, 1);
     }
+    header(data, 2, 2, 1, 16, 0x21);
+    data[18] = 0; data[19] = 0xfc;
+    data[20] = 0; data[21] = 0x7c;
+    {
+        const uint8_t red_transparent_red[8] = {255, 0, 0, 255, 255, 0, 0, 0};
+        expect(data, 22, red_transparent_red, 2, 1);
+    }
+
+    header(data, 2, 1, 1, 32, 0x28); /* declared alpha, all transparent */
+    data[18] = 0; data[19] = 0; data[20] = 255; data[21] = 0;
+    {
+        const uint8_t transparent_red[4] = {255, 0, 0, 0};
+        expect(data, 22, transparent_red, 1, 1);
+    }
+
+    header(data, 1, 1, 1, 8, 0x20); /* 32-bit palette, no attribute bits */
+    data[1] = 1; data[5] = 1; data[7] = 32;
+    data[18] = 0; data[19] = 0; data[20] = 255; data[21] = 40;
+    data[22] = 0;
+    expect(data, 23, red, 1, 1);
+
+    header(data, 1, 1, 1, 8, 0x20); /* 16-bit palette, no attribute bits */
+    data[1] = 1; data[5] = 1; data[7] = 16;
+    data[18] = 0; data[19] = 0x7c;
+    data[20] = 0;
+    expect(data, 21, red, 1, 1);
+
+    header(data, 3, 1, 1, 16, 0x20); /* gray + byte, no attribute bits */
+    data[18] = 77; data[19] = 42;
+    {
+        const uint8_t gray[4] = {77, 77, 77, 255};
+        expect(data, 20, gray, 1, 1);
+    }
+
+    header(data, 2, 1, 1, 24, 0x20); /* unused colour map before pixels */
+    data[1] = 1; data[5] = 2; data[7] = 24;
+    memset(data + 18, 0x55, 6);
+    data[24] = 0; data[25] = 0; data[26] = 255;
+    expect(data, 27, red, 1, 1);
+    assert(tga_decode(data, 23, &image) == TGA_TRUNCATED);
+    data[2] = 10; /* RLE true colour with an unused colour map */
+    data[24] = 0x80; data[25] = 0; data[26] = 0; data[27] = 255;
+    expect(data, 28, red, 1, 1);
+    data[1] = 2; /* reserved colour map type */
+    assert(tga_decode(data, 28, &image) == TGA_INVALID);
 
     {
         const uint8_t raw_alpha[4] = {64, 32, 16, 128};

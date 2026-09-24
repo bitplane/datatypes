@@ -51,7 +51,7 @@ static int color(uint8_t *rgba, const uint8_t *src, unsigned depth,
         if (depth != 8 && depth != 16)
             return 0;
         rgba[0] = rgba[1] = rgba[2] = src[0];
-        rgba[3] = depth == 16 ? src[1] : 255;
+        rgba[3] = depth == 16 && attribute_bits != 0 ? src[1] : 255;
         return 1;
     }
     switch (depth) {
@@ -130,7 +130,7 @@ enum tga_result tga_decode(const uint8_t *data, size_t length,
     base_type = type >= 8 ? type - 8 : type;
     if ((type != 1 && type != 2 && type != 3 &&
          type != 9 && type != 10 && type != 11) ||
-        data[1] != (base_type == 1 ? 1u : 0u))
+        data[1] > 1u || (base_type == 1 && data[1] != 1u))
         return TGA_INVALID;
     palette_first = le16(data + 3);
     palette_count = le16(data + 5);
@@ -169,6 +169,10 @@ enum tga_result tga_decode(const uint8_t *data, size_t length,
     r.pos = 18;
     if (!take(&r, NULL, data[0]))
         return TGA_TRUNCATED;
+    /* True-colour and grayscale images may carry an unused colour map. */
+    if (base_type != 1 && data[1] == 1u &&
+        !take(&r, NULL, (size_t)palette_count * ((palette_depth + 7u) / 8u)))
+        return TGA_TRUNCATED;
     if (base_type == 1) {
         palette = malloc((size_t)palette_count * 4u);
         if (palette == NULL)
@@ -180,7 +184,9 @@ enum tga_result tga_decode(const uint8_t *data, size_t length,
                 result = TGA_TRUNCATED;
                 goto fail;
             }
+            /* Palette alpha counts only when the pixels declare attribute bits. */
             if (!color(palette + i * 4u, raw, palette_depth, 0,
+                       (descriptor & 15u) == 0 ? 0u :
                        palette_depth == 16 ? 1u : palette_depth == 32 ? 8u : 0u)) {
                 result = TGA_INVALID;
                 goto fail;
