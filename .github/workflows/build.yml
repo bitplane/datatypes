@@ -26,17 +26,25 @@ jobs:
       list: ${{ steps.list.outputs.list }}
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
       - id: list
+        env:
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
           if [ "$GITHUB_REF_TYPE" = tag ]; then
               sh scripts/tag-package.sh "$GITHUB_REF_NAME" | cut -d' ' -f1
-          else
+          elif [ "$GITHUB_EVENT_NAME" = workflow_dispatch ]; then
               ls formats
+          else
+              bash scripts/ci-formats.sh "$BASE" "$HEAD" "$GITHUB_EVENT_NAME"
           fi | jq -Rnc '[inputs]' | sed 's/^/list=/' >> "$GITHUB_OUTPUT"
 
   sdk:
     name: ${{ matrix.package }}-${{ matrix.target }}
     needs: formats
+    if: needs.formats.outputs.list != '[]'
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
