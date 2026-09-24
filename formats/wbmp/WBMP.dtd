@@ -1,0 +1,8 @@
+Name=WBMP
+BaseName=wbmp
+Pattern=#?.wbmp
+Mask=0x00 0x00
+GroupID=pict
+ID=wbmp
+Flags=DTF_BINARY,DTF_CASE
+Priority=-10
