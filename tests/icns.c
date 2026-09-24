@@ -237,12 +237,12 @@ static void test_legacy(void)
     expect_pixel(&image, 0, 0, 0, 0, 0, 255);
     expect_pixel(&image, 1, 0, 255, 255, 255, 0);
     icns_free(&image);
-    /* A mask that hides everything shows the icon opaque. */
+    /* A mask that hides everything remains transparent. */
     memset(icm + 24, 0, 24);
     begin();
     add("icm#", icm, sizeof icm);
     assert(load(0, &image, &count) == CODEC_OK);
-    expect_pixel(&image, 1, 0, 255, 255, 255, 255);
+    expect_pixel(&image, 1, 0, 255, 255, 255, 0);
     icns_free(&image);
 }
 
@@ -447,8 +447,8 @@ static void test_png(void)
         e = chunk(extra, "tRNS", (const uint8_t *)"\x80\x80\x00\x7f\xff\xff", 6);
         n = make_png(png, 1, 1, 16, 2, 0, row, 7, extra, e);
         load_png(png, n, &image);
-        /* Transparent everywhere, so shown opaque. */
-        expect_pixel(&image, 0, 0, 128, 0, 255, 255);
+        /* PNG tRNS declares this pixel transparent. */
+        expect_pixel(&image, 0, 0, 128, 0, 255, 0);
         icns_free(&image);
         n = make_png(png, 1, 1, 16, 6, 0, row, 9, NULL, 0);
         load_png(png, n, &image);
@@ -456,7 +456,7 @@ static void test_png(void)
         icns_free(&image);
         n = make_png(png, 1, 1, 16, 4, 0, row, 5, NULL, 0);
         load_png(png, n, &image);
-        expect_pixel(&image, 0, 0, 128, 128, 128, 255); /* alpha rounds to 0 */
+        expect_pixel(&image, 0, 0, 128, 128, 128, 0); /* alpha rounds to 0 */
         icns_free(&image);
     }
 
@@ -677,7 +677,7 @@ static void test_select(void)
     expect_pixel(&image, 0, 0, 1, 2, 3, 255);
     icns_free(&image);
     assert(load(0, &image, &count) == CODEC_OK);
-    expect_pixel(&image, 0, 0, 255, 255, 255, 255); /* mask all clear */
+    expect_pixel(&image, 0, 0, 255, 255, 255, 0); /* mask all clear */
     icns_free(&image);
     assert(load(4, &image, &count) == CODEC_INVALID && count == 4);
     assert(load(-2, &image, &count) == CODEC_INVALID);
@@ -700,7 +700,7 @@ static void test_select(void)
     add("ics8", mask, sizeof mask);
     add("ics4", mask, 128);
     assert(load(ICNS_BEST, &image, &count) == CODEC_OK);
-    expect_pixel(&image, 0, 0, 0, 0, 0, 255); /* index 255 is black */
+    expect_pixel(&image, 0, 0, 0, 0, 0, 0); /* index 255 is black; mask is clear */
     icns_free(&image);
 }
 

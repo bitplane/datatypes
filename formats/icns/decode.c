@@ -350,12 +350,6 @@ enum codec_result icns_decode(const uint8_t *data, size_t length, long index,
         icns_free(image);
         return result;
     }
-    /* Writers often declare alpha and leave it empty: show those opaque. */
-    for (i = 0; i < pixels && image->rgba[i * 4u + 3u] == 0; i++)
-        ;
-    if (i == pixels)
-        for (i = 0; i < pixels; i++)
-            image->rgba[i * 4u + 3u] = 255;
     image->width = chosen.width;
     image->height = chosen.height;
     return CODEC_OK;
