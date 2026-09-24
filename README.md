@@ -2,7 +2,7 @@
 
 Independent image loaders for AROS, distributed through the bitplane aros-pkg channel. The first planned classes are Targa and PCX, followed by QOI. Each class will be installable separately.
 
-There are no datatype releases yet. The Targa class can load colour-mapped, true-colour and grayscale TGA files (including RLE) and save uncompressed 32-bit TGA with alpha. It has been tested in the x86_64 AROS guest, including a save/reload round trip. CI builds the class for three AROS targets and keeps the modules as workflow artifacts; it does not publish a release yet.
+There are no datatype releases yet. The Targa class can load colour-mapped, true-colour and grayscale TGA files (including RLE). It saves RLE true-colour TGA, using 24 bits for opaque pixels and 32 bits when transparency is present. It has been tested in the x86_64 AROS guest, including save/reload round trips. CI builds the class for three AROS targets and keeps the modules as workflow artifacts; it does not publish a release yet.
 
 ## Versioning
 

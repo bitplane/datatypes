@@ -12,6 +12,7 @@
 #include <stdlib.h>
 
 #include "decode.h"
+#include "encode.h"
 
 #define MAX_TGA_FILE (128L * 1024L * 1024L)
 
@@ -110,8 +111,10 @@ IPTR Targa__DTM_WRITE(Class *cl, Object *obj, struct dtWrite *msg)
     };
     UBYTE header[18] = { 0 };
     struct BitMapHeader *bitmap = NULL;
-    UBYTE *row;
+    UBYTE *row, *encoded;
     ULONG width, height, y, x;
+    ULONG bytes_per_pixel = 3;
+    size_t encoded_size;
     IPTR success = FALSE;
 
     if (msg->dtw_Mode != DTWM_RAW)
@@ -128,29 +131,46 @@ IPTR Targa__DTM_WRITE(Class *cl, Object *obj, struct dtWrite *msg)
     if (row == NULL)
         return FALSE;
 
-    header[2] = 2;             /* Uncompressed true-color image. */
-    header[12] = width & 255u;
-    header[13] = width >> 8;
-    header[14] = height & 255u;
-    header[15] = height >> 8;
-    header[16] = 32;
-    header[17] = 0x28;         /* Top-left origin, eight alpha bits. */
-    if (Write(msg->dtw_FileHandle, header, sizeof header) != sizeof header)
-        goto done;
-    for (y = 0; y < height; y++) {
+    /* Pixel content, not the source file's depth, decides whether alpha is needed. */
+    for (y = 0; y < height && bytes_per_pixel == 3; y++) {
         if (!DoSuperMethod(cl, obj, PDTM_READPIXELARRAY,
                            row, PBPAFMT_RGBA, width * 4u,
                            0, y, width, 1))
             goto done;
         for (x = 0; x < width; x++) {
-            UBYTE red = row[x * 4u];
-            row[x * 4u] = row[x * 4u + 2u];
-            row[x * 4u + 2u] = red;
+            if (row[x * 4u + 3u] != 255) {
+                bytes_per_pixel = 4;
+                break;
+            }
         }
-        if (Write(msg->dtw_FileHandle, row, width * 4u) != (LONG)(width * 4u))
-            goto done;
+    }
+    encoded = AllocVec(width * (bytes_per_pixel + 1u), MEMF_ANY);
+    if (encoded == NULL)
+        goto done;
+
+    header[2] = 10;            /* RLE true-color image. */
+    header[12] = width & 255u;
+    header[13] = width >> 8;
+    header[14] = height & 255u;
+    header[15] = height >> 8;
+    header[16] = bytes_per_pixel * 8u;
+    header[17] = bytes_per_pixel == 4 ? 0x28 : 0x20;
+    if (Write(msg->dtw_FileHandle, header, sizeof header) != sizeof header)
+        goto free_encoded;
+    for (y = 0; y < height; y++) {
+        if (!DoSuperMethod(cl, obj, PDTM_READPIXELARRAY,
+                           row, PBPAFMT_RGBA, width * 4u,
+                           0, y, width, 1))
+            goto free_encoded;
+        encoded_size = tga_encode_row(row, width, bytes_per_pixel, encoded,
+                                      width * (bytes_per_pixel + 1u));
+        if (encoded_size == 0 ||
+            Write(msg->dtw_FileHandle, encoded, encoded_size) != (LONG)encoded_size)
+            goto free_encoded;
     }
     success = Write(msg->dtw_FileHandle, footer, sizeof footer) == sizeof footer;
+free_encoded:
+    FreeVec(encoded);
 done:
     FreeVec(row);
     return success;

@@ -1,4 +1,5 @@
 #include "../formats/targa/decode.h"
+#include "../formats/targa/encode.h"
 
 #include <assert.h>
 #include <stdint.h>
@@ -25,6 +26,35 @@ static void expect(const uint8_t *data, size_t length,
     assert(tga_decode(data, length, &image) == TGA_OK);
     assert(image.width == width && image.height == height);
     assert(memcmp(image.rgba, pixels, (size_t)width * height * 4u) == 0);
+    tga_free(&image);
+}
+
+static void expect_encoded(unsigned width, unsigned bytes_per_pixel,
+                           unsigned pattern)
+{
+    uint8_t source[300 * 4], file[18 + 300 * 5];
+    struct tga_image image;
+    size_t length;
+    unsigned x;
+
+    assert(width <= 300);
+    header(file, 10, width, 1, bytes_per_pixel * 8u,
+           bytes_per_pixel == 4 ? 0x28 : 0x20);
+    for (x = 0; x < width; x++) {
+        unsigned value = pattern == 0 ? 7 : pattern == 1 ? x : x / 3;
+        source[x * 4u] = (uint8_t)value;
+        source[x * 4u + 1u] = (uint8_t)(value * 3u);
+        source[x * 4u + 2u] = (uint8_t)(value * 5u);
+        source[x * 4u + 3u] = bytes_per_pixel == 4 ? (uint8_t)(x / 3u) : 255;
+    }
+    length = tga_encode_row(source, width, bytes_per_pixel, file + 18,
+                            sizeof file - 18);
+    assert(length > 0);
+    if (pattern == 0 && bytes_per_pixel == 3)
+        assert(length < (size_t)width * 3u);
+    assert(tga_decode(file, length + 18, &image) == TGA_OK);
+    assert(image.width == width && image.height == 1);
+    assert(memcmp(image.rgba, source, (size_t)width * 4u) == 0);
     tga_free(&image);
 }
 
@@ -87,6 +117,17 @@ int main(void)
     assert(tga_decode(data, 22, &image) == TGA_INVALID);
     header(data, 2, 65535, 65535, 24, 0);
     assert(tga_decode(data, 18, &image) == TGA_TOO_LARGE);
-    puts("targa decoder tests passed");
+    expect_encoded(3, 3, 0);
+    expect_encoded(3, 3, 1);
+    expect_encoded(3, 3, 2);
+    expect_encoded(127, 3, 0);
+    expect_encoded(128, 3, 1);
+    expect_encoded(129, 3, 0);
+    expect_encoded(300, 3, 2);
+    expect_encoded(300, 3, 1);
+    expect_encoded(300, 3, 0);
+    expect_encoded(300, 4, 2);
+    assert(tga_encode_row(rgba, 1, 4, data, 1) == 0);
+    puts("targa codec tests passed");
     return 0;
 }

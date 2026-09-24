@@ -30,7 +30,9 @@ config="formats/$datatype/$datatype.conf"
     "formats/$datatype/${datatype}class.c" -o "$work/class.o"
 "$AROS_CC" -std=c99 -Wall -Wextra -Werror -c \
     "formats/$datatype/decode.c" -o "$work/decode.o"
+"$AROS_CC" -std=c99 -Wall -Wextra -Werror -c \
+    "formats/$datatype/encode.c" -o "$work/encode.o"
 "$AROS_CC" -I"$work" -c "$work/${datatype}_start.c" -o "$work/start.o"
 "$AROS_CC" -I"$work" -c "$work/${datatype}_end.c" -o "$work/end.o"
 "$AROS_CC" -nostartfiles "$work/start.o" "$work/class.o" \
-    "$work/decode.o" "$work/end.o" -lstdc_rel -o "$output/$datatype.datatype"
+    "$work/decode.o" "$work/encode.o" "$work/end.o" -lstdc_rel -o "$output/$datatype.datatype"
