@@ -41,8 +41,8 @@ The goal of the project is loader parity with ImageMagick, Pillow and netpbm on 
 - **Limits:** at most 16M pixels, and each side at most 65535 (the bitmap header is 16-bit).
 - **Alpha:**
   - Convert premultiplied alpha to straight alpha.
-  - If every pixel's alpha is zero, show the image opaque. Many writers declare alpha and leave it empty.
-  - Only trust alpha that the header says is there, such as attribute bits or a flag. Don't infer it from the storage depth.
+  - Preserve alpha when the format requires it or the header explicitly declares it, including images whose alpha is zero everywhere. Treat all-zero alpha as absent only for a documented format-specific convention backed by real files.
+  - Don't infer optional alpha from storage depth alone; use the format's alpha flag or attribute bits.
   - When saving to a variant without alpha, composite over white.
 - **High bit depth:** round 16-bit channels to 8-bit. For float data, clamp to 0–1, then apply the sRGB transfer curve.
 - **Compression and other libraries:** use AROS system libraries through their standard C API. For zlib that means `z1.library` via a `common/zlib.h` wrapper. If the wrapper doesn't exist yet, the format is blocked: stop and report. Never vendor third-party code.
