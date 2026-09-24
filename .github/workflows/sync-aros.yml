@@ -43,9 +43,10 @@ jobs:
           TAG: ${{ inputs.tag }}
         run: |
           mkdir -p dist
+          package=${TAG%-*}
           gh release download "$TAG" --repo "$GITHUB_REPOSITORY" \
-              --pattern 'targa-*-aros.tar.bz2' --dir dist
-          test "$(find dist -name 'targa-*-aros.tar.bz2' | wc -l)" -eq 4
+              --pattern "$package-*-aros.tar.bz2" --dir dist
+          test "$(find dist -name "$package-*-aros.tar.bz2" | wc -l)" -eq 4
       - name: Build pkg
         run: |
           pkg_source="$RUNNER_TEMP/aros-pkg"

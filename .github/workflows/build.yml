@@ -21,11 +21,13 @@ jobs:
       - run: make test
 
   sdk:
-    name: ${{ matrix.target }}
+    name: ${{ matrix.package }}-${{ matrix.target }}
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
+        package: [targa, pcx, qoi]
+        target: [i386-aros, aarch64-aros, x86_64-aros, m68k-aros]
         include:
           - target: i386-aros
             toolbox: aros/2026-08-31/i386:v0.1.1
@@ -43,26 +45,32 @@ jobs:
       - name: Check release tag
         if: startsWith(github.ref, 'refs/tags/')
         run: sh scripts/tag-package.sh "$GITHUB_REF_NAME"
-      - name: Build Targa datatype
+      - name: Build datatype
+        if: ${{ !startsWith(github.ref, 'refs/tags/') || startsWith(github.ref_name, format('{0}-', matrix.package)) }}
         env:
           GH_TOKEN: ${{ github.token }}
           TOOLBOX: ${{ matrix.toolbox }}
           TARGET: ${{ matrix.target }}
+          PACKAGE: ${{ matrix.package }}
         run: |
           image="ghcr.io/bitplane/mountin/builder/compiler/$TOOLBOX"
           printf '%s' "$GH_TOKEN" | docker login ghcr.io \
               --username "$GITHUB_ACTOR" --password-stdin
           docker pull "$image"
           docker run --rm --volume "$PWD:/work" --workdir /work \
-              "$image" sh scripts/build.sh "$TARGET" targa
+              "$image" sh scripts/build.sh "$TARGET" "$PACKAGE"
       - name: Package release
-        if: startsWith(github.ref, 'refs/tags/')
-        run: sh scripts/aros/package.sh '${{ matrix.target }}' targa "${GITHUB_REF_NAME#targa-}"
+        if: ${{ startsWith(github.ref, 'refs/tags/') && startsWith(github.ref_name, format('{0}-', matrix.package)) }}
+        env:
+          PACKAGE: ${{ matrix.package }}
+          TARGET: ${{ matrix.target }}
+        run: sh scripts/aros/package.sh "$TARGET" "$PACKAGE" "${GITHUB_REF_NAME#*-}"
       - uses: actions/upload-artifact@v7
+        if: ${{ !startsWith(github.ref, 'refs/tags/') || startsWith(github.ref_name, format('{0}-', matrix.package)) }}
         with:
-          name: targa-${{ matrix.target }}
+          name: ${{ matrix.package }}-${{ matrix.target }}
           path: |
-            dist/${{ matrix.target }}/targa.datatype
+            dist/${{ matrix.target }}/${{ matrix.package }}.datatype
             dist/*.tar.bz2*
           if-no-files-found: error
 

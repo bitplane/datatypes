@@ -16,6 +16,11 @@ work=$(mktemp -d "$work_root/datatype-package.XXXXXXXX")
 trap 'rm -rf "$work"' EXIT HUP INT TERM
 mkdir -p "$work/$package/Classes/DataTypes" "$work/$package/Help/$package"
 cp "$module" "$work/$package/Classes/DataTypes/"
+if [ -f "formats/$package/$(printf '%s' "$package" | tr '[:lower:]' '[:upper:]').dtd" ]; then
+    mkdir -p "$work/$package/Devs/DataTypes"
+    cp "formats/$package/$(printf '%s' "$package" | tr '[:lower:]' '[:upper:]').dtd" \
+       "$work/$package/Devs/DataTypes/$(printf '%s' "$package" | tr '[:lower:]' '[:upper:]')"
+fi
 cp LICENSE "$work/$package/Help/$package/LICENSE"
 chmod 644 "$work/$package/Classes/DataTypes/$package.datatype" \
           "$work/$package/Help/$package/LICENSE"

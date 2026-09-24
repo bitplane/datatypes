@@ -41,8 +41,8 @@ for archive in "$@"; do
     "$pkg" PUBLISH "$source" CHANNEL "$channel" KIND class \
         NAME "$package-datatype" VERSION "$version" \
         UPSTREAM "https://github.com/$repo/releases/download/$tag/$name" \
-        SHORT 'Targa image datatype for AROS' CATEGORY util/graphics \
-        TAGS 'datatype, image, targa' AUTHOR bitplane \
+        SHORT "$package image datatype for AROS" CATEGORY util/graphics \
+        TAGS "datatype, image, $package" AUTHOR bitplane \
         HOMEPAGE "https://github.com/$repo" REPOSITORY "https://github.com/$repo" \
         LICENSE MIT DISTRIBUTION open-source
 done

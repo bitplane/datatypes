@@ -4,7 +4,7 @@ set -eu
 package=${1:-targa}
 level=${2:-minor}
 dry_run=${3:-0}
-case "$package" in targa) ;; *) echo "Unknown datatype: $package" >&2; exit 2 ;; esac
+case "$package" in targa|pcx|qoi) ;; *) echo "Unknown datatype: $package" >&2; exit 2 ;; esac
 case "$level" in current|minor|major) ;; *) exit 2 ;; esac
 case "$dry_run" in 0|1) ;; *) exit 2 ;; esac
 config="formats/$package/$package.conf"
