@@ -71,6 +71,13 @@ Reads Nokia OTA bitmaps (`.otb`), the 1-bit format of operator logos and picture
 Reads Microsoft Paint images from Windows 1 (`DanM`, uncompressed) and Windows 2 (`LinS`, run-length encoded by row). Images load as one-plane pictures, black and white. The header checksum isn't checked. In version 2 files, a row whose packed size is zero, or whose runs stop short, is white to its end, and a run past the end of its row is cut off. Saves version 1 files: pixels are composited over white, then set white if their luminance is at least half. The package includes its `Devs/DataTypes/MSP` descriptor. The two versions' keys share only their third byte, `n`, so the descriptor matches that byte and requires a `.msp` name.
 `formats/msp/MSP.dtyp` is the compiled form of `MSP.dtd`; regenerate it with AROS's `createdtdesc -o formats/msp/MSP.dtyp formats/msp/MSP.dtd` if the recognition rules change.
 
+## Spectrum 512
+
+Reads Atari ST Spectrum 512 pictures, uncompressed SPU and compressed SPC, as 320×200 images with a 48-colour palette on every line. Line 0 has no palette, so it is black, as in netpbm. Palettes use 3 bits per gun, scaled as netpbm scales them. If any palette word has a fourth bit set, the whole picture is read as STE, with 4 bits per gun; netpbm always ignores that bit. The top 4 bits of palette words are ignored. In SPC files the palette length field isn't checked, colour 15 of each palette is black, and a run past the end of the bitmap is cut off. Enhanced SPU files, which start with `5BIT` and store more bits per gun, are rejected, as are SPS and SPX files.
+Saves SPU when the picture is 320×200, its top line is black and every colour, after compositing over white, is an ST or STE level. Each line's colours must also fit the 48 palette slots, which the display switches at fixed columns. The writer finds a slot for each colour with a bounded search per line, so an unusually dense picture can fail to save even though a fitting palette exists.
+The package includes its `Devs/DataTypes/SPECTRUM` descriptor. SPU has no magic number and a package installs a single descriptor, so it matches any file named `.spu` or `.spc` at priority -10, and the class rejects files that aren't Spectrum 512.
+`formats/spectrum/SPECTRUM.dtyp` is the compiled form of `SPECTRUM.dtd`; regenerate it with AROS's `createdtdesc -o formats/spectrum/SPECTRUM.dtyp formats/spectrum/SPECTRUM.dtd` if the recognition rules change.
+
 ## Build and test
 
 ```sh
