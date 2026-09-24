@@ -1,0 +1,8 @@
+Name=MacPaint
+BaseName=macpaint
+Pattern=#?.(mac|macp|pntg|pnt)
+Mask=0x00
+GroupID=pict
+ID=pntg
+Flags=DTF_BINARY,DTF_CASE
+Priority=-10
