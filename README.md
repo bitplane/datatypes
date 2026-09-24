@@ -34,6 +34,16 @@ Reads 1-bit, 8-bit, 24-bit and 32-bit Sun Raster files in old, standard, RLE and
 Reads X11 bitmaps (`char` arrays) and older X10 bitmaps (`short` arrays), accepting what Xlib's `XReadBitmapFile` accepts: comments, other preprocessor lines, decimal or negative values, and names that don't share a prefix. Images load as one-plane pictures, with set bits in black on an opaque white background. A hotspot becomes the picture's grab point. Saves X11 bitmaps: dark pixels (by luminance, after compositing over white) become set bits, the C names come from the file name being written, and a non-zero grab point is written as the hotspot. The package includes its `Devs/DataTypes/XBM` descriptor, which matches files named `#?.xbm`, because XBM files have no fixed header to look for.
 `formats/xbm/XBM.dtyp` is the compiled form of `XBM.dtd`; regenerate it with AROS's `createdtdesc -o formats/xbm/XBM.dtyp formats/xbm/XBM.dtd` if the recognition rules change.
 
+## ICO
+
+Reads Windows icons (`.ico`) and cursors (`.cur`). Entries may be BMP, with 1, 4, 8, 16, 24 or 32 bits per pixel, `BI_RGB` or `BI_BITFIELDS`, any header from the 12-byte OS/2 one to V5, or PNG. The AND mask makes pixels transparent, except in 32-bit entries with real alpha. If every alpha value is zero the mask applies instead, and an entry with no mask is opaque. A cursor's hotspot becomes the picture's grab point.
+Loads the largest entry, and the deepest of equal sizes, unless `PDTA_WhichPicture` picks one by its position in the file. `PDTA_GetNumPictures` reports the number of entries.
+AROS's datatypes can only load from files, so a PNG entry is written to a temporary file in `T:` and loaded with the system's PNG datatype, as AROS's AmigaGuide class does for embedded objects. PNG entries therefore need `png.datatype` and a writable `T:`.
+Doesn't read RLE, JPEG or PNG compression inside BMP entries, or top-down BMP entries.
+Saves an icon with one BMP entry: 24-bit when every pixel is opaque, 32-bit with alpha otherwise. The AND mask marks fully transparent pixels. A grab point other than 0,0 saves a cursor with that hotspot instead. Images up to 256×256 can be saved.
+The package includes its `Devs/DataTypes/ICO` descriptor, which matches the `00 00 ?? 00` header on files named `#?.ico` or `#?.cur`, at priority -10, because the header alone is too weak to identify a file.
+`formats/ico/ICO.dtyp` is the compiled form of `ICO.dtd`; regenerate it with AROS's `createdtdesc -o formats/ico/ICO.dtyp formats/ico/ICO.dtd` if the recognition rules change.
+
 ## Build and test
 
 ```sh
