@@ -1,0 +1,9 @@
+Name=QOI
+Version=$VER: QOI 1.0 (24.09.2026)
+BaseName=qoi
+Pattern=#?.qoi
+Mask='q' 'o' 'i' 'f'
+GroupID=pict
+ID=_qoi
+Flags=DTF_BINARY,DTF_CASE
+Priority=0
