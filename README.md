@@ -39,6 +39,12 @@ Reads X11 bitmaps (`char` arrays) and older X10 bitmaps (`short` arrays), accept
 Reads Farbfeld images: 16-bit big-endian RGBA with straight alpha. Channels are rounded to the nearest 8-bit value, and an image whose alpha is zero everywhere loads opaque. Bytes after the last pixel are ignored. Saves Farbfeld with each 8-bit channel widened exactly (times 257), so a saved image loads back unchanged. The package includes its `Devs/DataTypes/FARBFELD` descriptor, which recognises files by their `farbfeld` magic whatever their name.
 `formats/farbfeld/FARBFELD.dtyp` is the compiled form of `FARBFELD.dtd`; regenerate it with AROS's `createdtdesc -o formats/farbfeld/FARBFELD.dtyp formats/farbfeld/FARBFELD.dtd` if the recognition rules change.
 
+## Palm bitmap
+
+Reads Palm OS bitmaps, versions 0 to 3: 1, 2, 4 and 8-bit indexed, and 16-bit RGB565 direct colour, uncompressed or with scanline, RLE or PackBits compression. Indexed bitmaps use their colour table when they have one; otherwise 1, 2 and 4-bit bitmaps are gray from white to black and 8-bit ones use the Palm system palette. ImageMagick flags its 1, 2 and 4-bit bitmaps as having a colour table without writing one, so at those depths the flag counts only when a table of at most 2^depth entries is actually there. The transparent index or colour, when the header flags it, becomes transparent, unless it covers the whole image. A file holding a bitmap family (several depths or densities chained together, with or without the high-density separator) is a multi-image picture: `PDTA_WhichPicture` picks a bitmap in file order, `PDTA_GetNumPictures` reports how many there are, and by default the largest, then deepest, bitmap loads. Little-endian (`indexedLE`, `rgb565LE`) version 3 bitmaps and direct colour other than 5:6:5 are rejected.
+Saves an uncompressed 8-bit bitmap with a colour table when the image has at most 256 colours, which is lossless, and a 16-bit RGB565 bitmap otherwise. Fully transparent pixels become the transparent colour; partly transparent ones are composited over white.
+The package includes its `Devs/DataTypes/PALM` descriptor. Palm bitmaps have no magic number, so it matches files named `#?.palm` of at least 16 bytes, at priority -10. `formats/palm/PALM.dtyp` is the compiled form of `PALM.dtd`; regenerate it with AROS's `createdtdesc -o formats/palm/PALM.dtyp formats/palm/PALM.dtd` if the recognition rules change.
+
 ## Build and test
 
 ```sh
