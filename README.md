@@ -34,6 +34,12 @@ Reads 1-bit, 8-bit, 24-bit and 32-bit Sun Raster files in old, standard, RLE and
 Reads X11 bitmaps (`char` arrays) and older X10 bitmaps (`short` arrays), accepting what Xlib's `XReadBitmapFile` accepts: comments, other preprocessor lines, decimal or negative values, and names that don't share a prefix. Images load as one-plane pictures, with set bits in black on an opaque white background. A hotspot becomes the picture's grab point. Saves X11 bitmaps: dark pixels (by luminance, after compositing over white) become set bits, the C names come from the file name being written, and a non-zero grab point is written as the hotspot. The package includes its `Devs/DataTypes/XBM` descriptor, which matches files named `#?.xbm`, because XBM files have no fixed header to look for.
 `formats/xbm/XBM.dtyp` is the compiled form of `XBM.dtd`; regenerate it with AROS's `createdtdesc -o formats/xbm/XBM.dtyp formats/xbm/XBM.dtd` if the recognition rules change.
 
+## XPM
+
+Reads X11 pixmaps: XPM3 (`/* XPM */`), XPM2 in its plain (`! XPM2`) and C (`/* XPM2 C */`) forms, and XPM1 (`#define name_format`), with up to 32 characters per pixel. Each colour takes the first of its `c`, `g`, `g4` and `m` keys that parses, and ignores `s` (symbolic) names. A colour can be `None` (transparent), `#` with 3, 6, 9 or 12 hex digits (rounded to 8 bits per channel), or an X11 colour name. Names match regardless of case and spaces and take their values from X.Org's `rgb.txt`. The hotspot becomes the picture's grab point, and the class skips `XPMEXT` extensions. It rejects files without the XPM comment, XPM2 in Lisp syntax, `rgb:` and other Xcms colour specifications, and names missing from `rgb.txt`.
+Saves XPM3 with `#RRGGBB` colours, using as few characters per pixel as the colour count allows. Pixels with alpha below 128 become `None`; the rest are composited over white. The array takes its name from the file, and a non-zero grab point becomes the hotspot.
+The package includes its `Devs/DataTypes/XPM` descriptor. The three XPM versions start with different bytes, so the descriptor matches the file name (`#?.xpm` or `#?.xpm2`) rather than a header. `formats/xpm/XPM.dtyp` is the compiled form of `XPM.dtd`; regenerate it with AROS's `createdtdesc -o formats/xpm/XPM.dtyp formats/xpm/XPM.dtd` if the recognition rules change.
+
 ## Build and test
 
 ```sh
