@@ -86,6 +86,13 @@ Reads XV thumbnails, the `P7 332` files XV, GIMP 1.x and makexvpics keep in `.xv
 Reads PlayStation TIM textures: 4-bit and 8-bit indexed, 16-bit 5:5:5 and 24-bit RGB. Indexed images use the first palette of their CLUT; entries missing from a short CLUT are black, and images without a CLUT (whose palette lives elsewhere in VRAM) load as grayscale. A CLUT in a 16-bit or 24-bit file is skipped. Images load opaque: the STP bit and transparent black are rendering modes of the PlayStation GPU, not alpha stored in the file. Several TIMs stored back to back in one file are separate pictures, selected with `PDTA_WhichPicture`. Mixed-mode (frame buffer) TIMs are not supported. Saves 24-bit TIM, compositing transparency over white. The package includes its `Devs/DataTypes/TIM` descriptor, which matches the `10 00 00 00` ID and the zero reserved flag bytes on files named `.tim`.
 `formats/tim/TIM.dtyp` is the compiled form of `TIM.dtd`; regenerate it with AROS's `createdtdesc -o formats/tim/TIM.dtyp formats/tim/TIM.dtd` if the recognition rules change.
 
+## ICNS
+
+Reads Apple icon files: PNG entries in any PNG colour type and bit depth, interlaced or not; 24-bit icons, packed or uncompressed, with their 8-bit masks (`is32`, `il32`, `ih32`, `it32`, and `icp4`/`icp5` holding the same data); ARGB entries (`ic04`, `ic05`, `icsb`); and classic 1-, 4- and 8-bit icons with their 1-bit masks, in the Mac OS system palettes. JPEG 2000 entries are unsupported and skipped, so a file holding only JPEG 2000 doesn't load. Nested icon sets (dark mode, template, selected) are ignored. 16-bit PNG channels are rounded to 8 bits, and explicit alpha is preserved even when it is zero everywhere. PNG data is inflated by `z1.library`.
+A file holds several images. `PDTA_WhichPicture` picks one by its position among the loadable entries, in file order, and `PDTA_GetNumPictures` reports how many there are. Otherwise the largest image loads, then the deepest, and a 1x entry is preferred to a 2x entry of the same pixel size.
+Saves a one-image ICNS file when the picture is square: 24-bit packed with an 8-bit mask at 16, 32, 48 and 128 pixels, and PNG at 64, 256, 512 and 1024 pixels. Other sizes can't be saved. The package includes its `Devs/DataTypes/ICNS` descriptor, which matches the `icns` magic on files named `#?.icns`.
+`formats/icns/ICNS.dtyp` is the compiled form of `ICNS.dtd`; regenerate it with AROS's `createdtdesc -o formats/icns/ICNS.dtyp formats/icns/ICNS.dtd` if the recognition rules change.
+
 ## Build and test
 
 ```sh
