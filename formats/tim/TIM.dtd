@@ -1,0 +1,8 @@
+Name=TIM
+BaseName=tim
+Pattern=#?.tim
+Mask=0x10 0x00 0x00 0x00 ANY 0x00 0x00 0x00
+GroupID=pict
+ID=ptim
+Flags=DTF_BINARY,DTF_CASE
+Priority=0
