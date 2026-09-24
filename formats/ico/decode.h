@@ -29,6 +29,4 @@ enum codec_result ico_decode_bmp(const uint8_t *data, size_t length,
                                  const struct ico_entry *entry,
                                  struct ico_image *image);
 void ico_free(struct ico_image *image);
-/* Make pixels opaque if every alpha is zero. */
-void ico_fix_alpha(uint8_t *rgba, size_t pixels);
 #endif

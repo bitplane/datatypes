@@ -82,7 +82,6 @@ static LONG load_png(const UBYTE *data, const struct ico_entry *entry,
         if (error == 0) {
             image->width = width;
             image->height = height;
-            ico_fix_alpha(image->rgba, (size_t)width * height);
         } else if (image->rgba != NULL) {
             FreeVec(image->rgba);
             image->rgba = NULL;

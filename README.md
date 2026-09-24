@@ -36,7 +36,7 @@ Reads X11 bitmaps (`char` arrays) and older X10 bitmaps (`short` arrays), accept
 
 ## ICO
 
-Reads Windows icons (`.ico`) and cursors (`.cur`). Entries may be BMP, with 1, 4, 8, 16, 24 or 32 bits per pixel, `BI_RGB` or `BI_BITFIELDS`, any header from the 12-byte OS/2 one to V5, or PNG. The AND mask makes pixels transparent, except in 32-bit entries with real alpha. If every alpha value is zero the mask applies instead, and an entry with no mask is opaque. A cursor's hotspot becomes the picture's grab point.
+Reads Windows icons (`.ico`) and cursors (`.cur`). Entries may be BMP, with 1, 4, 8, 16, 24 or 32 bits per pixel, `BI_RGB` or `BI_BITFIELDS`, any header from the 12-byte OS/2 one to V5, or PNG. The AND mask makes pixels transparent, except in 32-bit entries with real alpha. If a 32-bit entry's alpha is zero everywhere, the mask applies instead, as in Windows; an entry with no mask is opaque. PNG entries keep their alpha as it is. A cursor's hotspot becomes the picture's grab point.
 Loads the largest entry, and the deepest of equal sizes, unless `PDTA_WhichPicture` picks one by its position in the file. `PDTA_GetNumPictures` reports the number of entries.
 AROS's datatypes can only load from files, so a PNG entry is written to a temporary file in `T:` and loaded with the system's PNG datatype, as AROS's AmigaGuide class does for embedded objects. PNG entries therefore need `png.datatype` and a writable `T:`.
 Doesn't read RLE, JPEG or PNG compression inside BMP entries, or top-down BMP entries.

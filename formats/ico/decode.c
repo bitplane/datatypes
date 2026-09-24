@@ -283,16 +283,6 @@ void ico_free(struct ico_image *image)
     image->width = image->height = 0;
 }
 
-void ico_fix_alpha(uint8_t *rgba, size_t pixels)
-{
-    size_t i;
-    for (i = 0; i < pixels; i++)
-        if (rgba[i * 4 + 3] != 0)
-            return;
-    for (i = 0; i < pixels; i++)
-        rgba[i * 4 + 3] = 255;
-}
-
 enum codec_result ico_decode_bmp(const uint8_t *data, size_t length,
                                  const struct ico_entry *wanted,
                                  struct ico_image *image)
@@ -372,7 +362,8 @@ enum codec_result ico_decode_bmp(const uint8_t *data, size_t length,
                 alpha_seen = 1;
         }
     }
-    /* Alpha that is all zero was never filled in, so the AND mask applies instead. */
+    /* Windows treats a 32-bit entry whose alpha is zero everywhere as having no
+       alpha, and uses the AND mask; netpbm's pamtowinicon writes such entries. */
     if (!has_alpha || !alpha_seen) {
         for (y = 0; y < entry.height; y++) {
             row = dib.has_mask ? p + dib.mask + (entry.height - 1u - y) * dib.mask_stride : NULL;

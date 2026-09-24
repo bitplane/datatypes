@@ -416,16 +416,6 @@ static void directory_tests(void)
     assert(ico_best(file, 3, &index) == CODEC_TRUNCATED);
 }
 
-static void alpha_tests(void)
-{
-    uint8_t rgba[8] = {1,2,3,0, 4,5,6,0};
-    ico_fix_alpha(rgba, 2);
-    assert(rgba[3] == 255 && rgba[7] == 255);
-    rgba[3] = 0;
-    ico_fix_alpha(rgba, 2);
-    assert(rgba[3] == 0 && rgba[7] == 255);
-}
-
 static void encode_tests(void)
 {
     static uint8_t rgba[256 * 256 * 4], out[300000];
@@ -484,7 +474,6 @@ int main(void)
     true_colour_tests();
     header_tests();
     directory_tests();
-    alpha_tests();
     encode_tests();
     puts("ico tests passed");
     return 0;
