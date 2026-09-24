@@ -1,0 +1,7 @@
+Name=XBM
+BaseName=xbm
+Pattern=#?.xbm
+GroupID=pict
+ID=_xbm
+Flags=DTF_ASCII
+Priority=0
