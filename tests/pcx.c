@@ -21,7 +21,7 @@ static void expect(const uint8_t *data, size_t length,
                    const uint8_t *pixels, unsigned width, unsigned height)
 {
     struct pcx_image image;
-    assert(pcx_decode(data, length, &image) == PCX_OK);
+    assert(pcx_decode(data, length, &image) == CODEC_OK);
     assert(image.width == width && image.height == height);
     assert(memcmp(image.rgba, pixels, (size_t)width * height * 4u) == 0);
     pcx_free(&image);
@@ -38,7 +38,7 @@ int main(void)
     data[128] = 0x12; data[129] = 0x30;
     expect(data, 130, rgb, 3, 1);
     data[66] = 1;
-    assert(pcx_decode(data, 130, &image) == PCX_INVALID);
+    assert(pcx_decode(data, 130, &image) == CODEC_INVALID);
 
     header(data, 3, 1, 1, 3, 2);
     data[16 + 3] = 255; data[16 + 7] = 255; data[16 + 11] = 255;
@@ -50,9 +50,9 @@ int main(void)
     data[132] = 0x0c;
     data[133 + 3] = 255; data[133 + 7] = 255; data[133 + 11] = 255;
     expect(data, 133 + 768, rgb, 3, 1);
-    assert(pcx_decode(data, 132, &image) == PCX_INVALID);
+    assert(pcx_decode(data, 132, &image) == CODEC_INVALID);
     data[132] = 0;
-    assert(pcx_decode(data, 133 + 768, &image) == PCX_INVALID);
+    assert(pcx_decode(data, 133 + 768, &image) == CODEC_INVALID);
 
     header(data, 2, 1, 8, 3, 2);
     data[2] = 1;
@@ -63,9 +63,9 @@ int main(void)
         const uint8_t expected[8] = {255,0,0,255, 0,255,0,255};
         expect(data, 136, expected, 2, 1);
     }
-    assert(pcx_decode(data, 129, &image) == PCX_TRUNCATED);
+    assert(pcx_decode(data, 129, &image) == CODEC_TRUNCATED);
     data[128] = 0xc0;
-    assert(pcx_decode(data, 136, &image) == PCX_TRUNCATED);
+    assert(pcx_decode(data, 136, &image) == CODEC_TRUNCATED);
 
     {
         uint8_t out[128 + 100];

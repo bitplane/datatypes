@@ -10,7 +10,7 @@ static void expect(const uint8_t *data, size_t length,
                    const uint8_t *pixels, unsigned width, unsigned height)
 {
     struct qoi_image image;
-    assert(qoi_decode(data, length, &image) == QOI_OK);
+    assert(qoi_decode(data, length, &image) == CODEC_OK);
     assert(image.width == width && image.height == height);
     assert(memcmp(image.rgba, pixels, (size_t)width * height * 4u) == 0);
     qoi_free(&image);
@@ -35,9 +35,9 @@ int main(void)
         expect(data, 27, expected, 3, 1);
     }
     data[18] = 0xfd; /* run crosses image bounds */
-    assert(qoi_decode(data, 27, &image) == QOI_INVALID);
+    assert(qoi_decode(data, 27, &image) == CODEC_INVALID);
     data[18] = 0xc1;
-    assert(qoi_decode(data, 26, &image) == QOI_INVALID);
+    assert(qoi_decode(data, 26, &image) == CODEC_INVALID);
 
     for (x = 0; x < 128; x++) {
         source[x * 4u] = (uint8_t)(x / 4u);

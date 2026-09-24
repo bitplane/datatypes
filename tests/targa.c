@@ -23,7 +23,7 @@ static void expect(const uint8_t *data, size_t length,
                    const uint8_t *pixels, unsigned width, unsigned height)
 {
     struct tga_image image;
-    assert(tga_decode(data, length, &image) == TGA_OK);
+    assert(tga_decode(data, length, &image) == CODEC_OK);
     assert(image.width == width && image.height == height);
     assert(memcmp(image.rgba, pixels, (size_t)width * height * 4u) == 0);
     tga_free(&image);
@@ -52,7 +52,7 @@ static void expect_encoded(unsigned width, unsigned bytes_per_pixel,
     assert(length > 0);
     if (pattern == 0 && bytes_per_pixel == 3)
         assert(length < (size_t)width * 3u);
-    assert(tga_decode(file, length + 18, &image) == TGA_OK);
+    assert(tga_decode(file, length + 18, &image) == CODEC_OK);
     assert(image.width == width && image.height == 1);
     assert(memcmp(image.rgba, source, (size_t)width * 4u) == 0);
     tga_free(&image);
@@ -84,7 +84,7 @@ static void expect_extension_alpha(unsigned type, const uint8_t expected[4])
     }
     data[footer] = 255;
     data[footer + 1] = 255;
-    assert(tga_decode(data, sizeof data, &image) == TGA_INVALID);
+    assert(tga_decode(data, sizeof data, &image) == CODEC_INVALID);
 }
 
 int main(void)
@@ -124,7 +124,7 @@ int main(void)
     data[24] = 6; data[25] = 5;
     expect(data, 26, blue_red, 2, 1);
     data[25] = 4;
-    assert(tga_decode(data, 26, &image) == TGA_INVALID);
+    assert(tga_decode(data, 26, &image) == CODEC_INVALID);
 
     header(data, 1, 1, 1, 8, 0x28); /* 32-bit palette with transparency */
     data[1] = 1; data[5] = 1; data[7] = 32;
@@ -139,7 +139,7 @@ int main(void)
     header(data, 2, 1, 1, 32, 0x28);
     data[18] = 30; data[19] = 20; data[20] = 10; data[21] = 40;
     expect(data, 22, rgba, 1, 1);
-    assert(tga_decode(data, 21, &image) == TGA_TRUNCATED);
+    assert(tga_decode(data, 21, &image) == CODEC_TRUNCATED);
 
     header(data, 2, 1, 1, 16, 0x21);
     data[18] = 0; data[19] = 0xfc; /* opaque red in 5:5:5:1 */
@@ -188,12 +188,12 @@ int main(void)
     memset(data + 18, 0x55, 6);
     data[24] = 0; data[25] = 0; data[26] = 255;
     expect(data, 27, red, 1, 1);
-    assert(tga_decode(data, 23, &image) == TGA_TRUNCATED);
+    assert(tga_decode(data, 23, &image) == CODEC_TRUNCATED);
     data[2] = 10; /* RLE true colour with an unused colour map */
     data[24] = 0x80; data[25] = 0; data[26] = 0; data[27] = 255;
     expect(data, 28, red, 1, 1);
     data[1] = 2; /* reserved colour map type */
-    assert(tga_decode(data, 28, &image) == TGA_INVALID);
+    assert(tga_decode(data, 28, &image) == CODEC_INVALID);
 
     {
         const uint8_t raw_alpha[4] = {64, 32, 16, 128};
@@ -208,11 +208,11 @@ int main(void)
 
     header(data, 10, 1, 1, 24, 0x20);
     data[18] = 0x81; /* two-pixel packet into one-pixel image */
-    assert(tga_decode(data, 22, &image) == TGA_INVALID);
+    assert(tga_decode(data, 22, &image) == CODEC_INVALID);
     data[17] = 0xe0; /* interleaved scan lines unsupported */
-    assert(tga_decode(data, 22, &image) == TGA_INVALID);
+    assert(tga_decode(data, 22, &image) == CODEC_INVALID);
     header(data, 2, 65535, 65535, 24, 0);
-    assert(tga_decode(data, 18, &image) == TGA_TOO_LARGE);
+    assert(tga_decode(data, 18, &image) == CODEC_TOO_LARGE);
     expect_encoded(3, 3, 0);
     expect_encoded(3, 3, 1);
     expect_encoded(3, 3, 2);
