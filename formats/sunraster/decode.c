@@ -80,7 +80,7 @@ enum codec_result sunraster_decode(const uint8_t *data, size_t length,
     if (maptype == MAP_NONE && maplength != 0)
         return CODEC_INVALID;
     if (maptype == MAP_RGB) {
-        if (maplength == 0 || maplength % 3u != 0)
+        if (maplength % 3u != 0)
             return CODEC_INVALID;
         entries = maplength / 3u;
         if (depth <= 8 && entries > (1u << depth))
@@ -88,7 +88,7 @@ enum codec_result sunraster_decode(const uint8_t *data, size_t length,
         if (length - pos < maplength)
             return CODEC_TRUNCATED;
         /* A true-colour image has no use for a colormap; skip it. */
-        if (depth <= 8)
+        if (depth <= 8 && entries != 0)
             map = data + pos;
         pos += maplength;
     }

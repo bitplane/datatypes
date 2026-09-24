@@ -155,8 +155,19 @@ int main(void)
     assert(decode(data, 64) == CODEC_INVALID);
     header(data, 1, 1, 8, 1, 0, 3);
     assert(decode(data, 64) == CODEC_INVALID);
+    /* An RGB map type with zero entries has no map and uses grayscale. */
     header(data, 1, 1, 8, 1, 1, 0);
-    assert(decode(data, 64) == CODEC_INVALID);
+    data[32] = 7; data[33] = 0;
+    {
+        const uint8_t pixel[4] = {7, 7, 7, 255};
+        expect(data, 34, pixel, 1, 1);
+    }
+    header(data, 1, 1, 1, 1, 1, 0);
+    data[32] = 0; data[33] = 0;
+    {
+        const uint8_t pixel[4] = {255, 255, 255, 255};
+        expect(data, 34, pixel, 1, 1);
+    }
     header(data, 1, 1, 8, 1, 1, 4);
     assert(decode(data, 64) == CODEC_INVALID);
     header(data, 1, 1, 8, 1, 1, 771);
