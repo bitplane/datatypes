@@ -63,12 +63,12 @@ int main(void)
     assert(image.rgba[3] == 0 && image.rgba[15] == 0);
     farbfeld_free(&image);
 
-    /* An all-zero alpha channel means opaque; colour is untouched. */
+    /* An all-zero alpha channel is transparent; colour is untouched. */
     put16(3, 3, 0);
     assert(farbfeld_decode(data, 16 + 32, &image) == CODEC_OK);
     for (i = 0; i < 4; i++) {
         assert(image.rgba[i * 4u] == i * 0x11u);
-        assert(image.rgba[i * 4u + 3u] == 255);
+        assert(image.rgba[i * 4u + 3u] == 0);
     }
     farbfeld_free(&image);
 

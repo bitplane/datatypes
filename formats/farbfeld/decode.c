@@ -29,7 +29,6 @@ enum codec_result farbfeld_decode(const uint8_t *data, size_t length,
 {
     uint32_t width, height;
     size_t pixels, i;
-    int has_alpha = 0;
 
     if (image == NULL)
         return CODEC_INVALID;
@@ -62,12 +61,6 @@ enum codec_result farbfeld_decode(const uint8_t *data, size_t length,
         dst[1] = to8(src + 2);
         dst[2] = to8(src + 4);
         dst[3] = to8(src + 6);
-        if (src[6] != 0 || src[7] != 0)
-            has_alpha = 1;
     }
-    /* Writers that leave alpha empty mean an opaque image. */
-    if (!has_alpha)
-        for (i = 0; i < pixels; i++)
-            image->rgba[i * 4u + 3u] = 255;
     return CODEC_OK;
 }
