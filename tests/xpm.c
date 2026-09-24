@@ -104,7 +104,8 @@ static unsigned round_trip(const uint8_t *rgba, unsigned width, unsigned height,
     struct xpm_encoder encoder;
     struct xpm_image image;
     size_t capacity, pos, size, i, row;
-    unsigned x, y, cpp, transparent = 0, opaque = 0;
+    unsigned x, y, cpp;
+    int transparent = 0;
     char *text;
 
     xpm_encoder_init(&encoder);
@@ -141,7 +142,6 @@ static unsigned round_trip(const uint8_t *rgba, unsigned width, unsigned height,
             transparent = 1;
             continue;
         }
-        opaque = 1;
         assert(q[3] == 255);
         if (p[3] == 255)
             assert(memcmp(p, q, 3) == 0);
@@ -151,8 +151,8 @@ static unsigned round_trip(const uint8_t *rgba, unsigned width, unsigned height,
     }
     for (i = 0; i < (size_t)width * height; i++)
         if (rgba[i * 4u + 3u] < 128)
-            assert(image.rgba[i * 4u + 3u] == (opaque ? 0 : 255));
-    assert(image.has_alpha == (transparent && opaque));
+            assert(image.rgba[i * 4u + 3u] == 0);
+    assert(image.has_alpha == transparent);
     xpm_free(&image);
     free(text);
     return cpp;
@@ -321,9 +321,9 @@ int main(void)
                   &image) == CODEC_OK);
     assert(pixel(&image, 0, 0) == 0x0000ffff && pixel(&image, 1, 0) == 0xff0000ff);
     xpm_free(&image);
-    /* Every pixel transparent: shown opaque. */
+    /* Every pixel transparent remains transparent. */
     assert(decode("/* XPM */ {\"2 1 1 1\" \"a c None\" \"aa\"}", &image) == CODEC_OK);
-    assert(pixel(&image, 0, 0) == 0x000000ff && !image.has_alpha);
+    assert(pixel(&image, 0, 0) == 0x00000000 && image.has_alpha);
     xpm_free(&image);
     /* A comment opener inside a string is part of the string. */
     assert(decode("/* XPM */ {\"1 1 1 2\" \"/* c red\" \"/*\"}", &image) == CODEC_OK);

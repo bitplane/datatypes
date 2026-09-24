@@ -423,7 +423,7 @@ static enum codec_result read_colors(struct reader *r, struct color_table *t)
 }
 
 static enum codec_result read_pixels(struct reader *r, const struct color_table *t,
-                                     struct xpm_image *image, int *transparent, int *opaque)
+                                     struct xpm_image *image, int *transparent)
 {
     unsigned x, y;
     uint8_t *out = image->rgba;
@@ -444,8 +444,6 @@ static enum codec_result read_pixels(struct reader *r, const struct color_table 
             memcpy(out, t->rgba + (size_t)index * 4u, 4);
             if (out[3] == 0)
                 *transparent = 1;
-            else
-                *opaque = 1;
         }
     }
     return CODEC_OK;
@@ -467,8 +465,8 @@ enum codec_result xpm_decode(const uint8_t *data, size_t length, struct xpm_imag
     struct reader r;
     struct span s;
     enum codec_result result;
-    int transparent = 0, opaque = 0;
-    size_t i, pixels;
+    int transparent = 0;
+    size_t pixels;
 
     if (image == NULL)
         return CODEC_INVALID;
@@ -512,7 +510,7 @@ enum codec_result xpm_decode(const uint8_t *data, size_t length, struct xpm_imag
     if (result == CODEC_OK) {
         image->width = (unsigned)v.width;
         image->height = (unsigned)v.height;
-        result = read_pixels(&r, &table, image, &transparent, &opaque);
+        result = read_pixels(&r, &table, image, &transparent);
     }
     free_table(&table);
     if (result == CODEC_TRUNCATED || (result == CODEC_OK && r.truncated))
@@ -521,11 +519,7 @@ enum codec_result xpm_decode(const uint8_t *data, size_t length, struct xpm_imag
         xpm_free(image);
         return result;
     }
-    /* An image with every pixel transparent is shown opaque. */
-    if (!opaque)
-        for (i = 0; i < pixels; i++)
-            image->rgba[i * 4u + 3u] = 255;
-    image->has_alpha = transparent && opaque;
+    image->has_alpha = transparent;
     if (v.hot_x < v.width && v.hot_y < v.height) {
         image->hot_x = (long)v.hot_x;
         image->hot_y = (long)v.hot_y;
