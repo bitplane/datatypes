@@ -1,0 +1,42 @@
+name: AROS compiler checks
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sdk:
+    name: ${{ matrix.target }}
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: i386-aros
+            toolbox: aros/2026-08-31/i386:v0.1.1
+          - target: aarch64-aros
+            toolbox: aros/2026-08-31/aarch64:v0.1.1
+          - target: x86_64-aros
+            toolbox: aros/2026-08-31/x86_64:v0.1.8
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - uses: actions/checkout@v6
+      - name: Check AROS SDK
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TOOLBOX: ${{ matrix.toolbox }}
+          TARGET: ${{ matrix.target }}
+        run: |
+          image="ghcr.io/bitplane/mountin/builder/compiler/$TOOLBOX"
+          printf '%s' "$GH_TOKEN" | docker login ghcr.io \
+              --username "$GITHUB_ACTOR" --password-stdin
+          docker pull "$image"
+          docker run --rm --volume "$PWD:/work" --workdir /work \
+              "$image" sh scripts/ci-build.sh "$TARGET"
