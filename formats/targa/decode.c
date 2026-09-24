@@ -164,7 +164,7 @@ enum tga_result tga_decode(const uint8_t *data, size_t length,
                 goto fail;
             }
             if (!color(palette + i * 4u, raw, palette_depth, 0,
-                       palette_depth == 16 ? 1u : 0u)) {
+                       palette_depth == 16 ? 1u : palette_depth == 32 ? 8u : 0u)) {
                 result = TGA_INVALID;
                 goto fail;
             }

@@ -97,6 +97,12 @@ int main(void)
     data[25] = 4;
     assert(tga_decode(data, 26, &image) == TGA_INVALID);
 
+    header(data, 1, 1, 1, 8, 0x28); /* 32-bit palette with transparency */
+    data[1] = 1; data[5] = 1; data[7] = 32;
+    data[18] = 30; data[19] = 20; data[20] = 10; data[21] = 40;
+    data[22] = 0;
+    expect(data, 23, rgba, 1, 1);
+
     header(data, 11, 1, 1, 16, 0x28); /* RLE gray + alpha */
     data[18] = 0; data[19] = 77; data[20] = 42;
     expect(data, 21, gray_alpha, 1, 1);
