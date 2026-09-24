@@ -13,6 +13,7 @@ Reads packed and planar indexed PCX, 8-bit indexed PCX, and 24-bit RGB PCX. Save
 ## QOI
 
 Reads and saves QOI RGB and RGBA images. The package includes its `Devs/DataTypes/QOI` descriptor.
+`formats/qoi/QOI.dtyp` is the compiled form of `QOI.dtd`; regenerate it with AROS's `createdtdesc -o formats/qoi/QOI.dtyp formats/qoi/QOI.dtd` if the recognition rules change.
 
 ## Build and test
 
