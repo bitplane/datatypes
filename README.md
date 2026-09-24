@@ -71,6 +71,11 @@ Reads Nokia OTA bitmaps (`.otb`), the 1-bit format of operator logos and picture
 Reads Microsoft Paint images from Windows 1 (`DanM`, uncompressed) and Windows 2 (`LinS`, run-length encoded by row). Images load as one-plane pictures, black and white. The header checksum isn't checked. In version 2 files, a row whose packed size is zero, or whose runs stop short, is white to its end, and a run past the end of its row is cut off. Saves version 1 files: pixels are composited over white, then set white if their luminance is at least half. The package includes its `Devs/DataTypes/MSP` descriptor. The two versions' keys share only their third byte, `n`, so the descriptor matches that byte and requires a `.msp` name.
 `formats/msp/MSP.dtyp` is the compiled form of `MSP.dtd`; regenerate it with AROS's `createdtdesc -o formats/msp/MSP.dtyp formats/msp/MSP.dtd` if the recognition rules change.
 
+## MTV and QRT
+
+Reads the output of two ray tracers: MTV (a text line `width height`, then 8-bit RGB triples) and QRT (16-bit little-endian width and height, then per row a row number and the red, green and blue planes). The class tells them apart by content. MTV header lines are read as ImageMagick and netpbm read them: blanks, a `+` sign and anything after the two numbers are allowed, but both numbers must be on the first line. QRT row numbers are ignored, as netpbm ignores them. Images load opaque. An MTV file can hold several images one after another, as ImageMagick writes them. `PDTA_WhichPicture` picks one, and `PDTA_GetNumPictures` reports how many there are. Bytes after the last image that don't form a header line are ignored. Saves one MTV image, compositing transparency over white.
+The package includes its `Devs/DataTypes/MTV` descriptor, which covers both formats. Neither has a magic number, so it matches the file name (`#?.mtv`, `#?.pic`, `#?.qrt` or `#?.dis`) at priority -10, and the decoder rejects files that are neither. QRT's own `.raw` name is too generic to claim. `formats/mtv/MTV.dtyp` is the compiled form of `MTV.dtd`; regenerate it with AROS's `createdtdesc -o formats/mtv/MTV.dtyp formats/mtv/MTV.dtd` if the recognition rules change.
+
 ## Build and test
 
 ```sh
