@@ -351,9 +351,9 @@ static enum codec_result decode_bitmap(const uint8_t *data, size_t length,
                                        const struct header *h, uint8_t *rgba)
 {
     uint8_t palette[256][3], *row, *out = rgba;
-    size_t pos = h->data, count = (size_t)h->width * h->height, i;
+    size_t pos = h->data;
     unsigned x, y, value, shift, mask = (1u << (h->depth & 15u)) - 1u;
-    int keyed = (h->flags & FLAG_TRANSPARENT) != 0, visible = 0;
+    int keyed = (h->flags & FLAG_TRANSPARENT) != 0;
     enum codec_result result = CODEC_OK;
 
     if (h->data > length)
@@ -378,14 +378,9 @@ static enum codec_result decode_bitmap(const uint8_t *data, size_t length,
                 memcpy(out, palette[value], 3);
             }
             out[3] = keyed && value == h->key ? 0 : 255;
-            visible |= out[3];
         }
     }
     free(row);
-    /* A key that covers every pixel hides nothing: show the image opaque. */
-    if (result == CODEC_OK && !visible)
-        for (i = 0; i < count; i++)
-            rgba[i * 4u + 3u] = 255;
     return result;
 }
 

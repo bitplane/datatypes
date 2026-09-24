@@ -176,10 +176,10 @@ static void test_indexed(void)
     d[6] = 0;
     for (i = 0; i < 3; i++) px[i * 4 + 3] = 255;
     expect(d, n + 4, 0, px, 3, 1);
-    /* A key covering every pixel shows the image opaque. */
+    /* The flag is explicit, so a key covering every pixel hides them all. */
     n = header(d, 2, 1, 2, TRANSPARENT, 8, 2, 0, 0, 0);
     memset(d + n, 0, 2);
-    rgb(px, 255, 255, 255, 255); rgb(px + 4, 255, 255, 255, 255);
+    rgb(px, 255, 255, 255, 0); rgb(px + 4, 255, 255, 255, 0);
     expect(d, n + 2, 0, px, 2, 1);
 }
 
