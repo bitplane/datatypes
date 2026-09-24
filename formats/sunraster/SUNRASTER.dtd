@@ -1,0 +1,8 @@
+Name=SunRaster
+BaseName=sunraster
+Pattern=#?
+Mask=0x59 0xa6 0x6a 0x95
+GroupID=pict
+ID=_sun
+Flags=DTF_BINARY,DTF_CASE
+Priority=0
