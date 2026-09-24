@@ -1,0 +1,8 @@
+Name=Palm
+BaseName=palm
+Pattern=#?.palm
+Mask=ANY ANY ANY ANY ANY ANY ANY ANY ANY ANY ANY ANY ANY ANY ANY ANY
+GroupID=pict
+ID=palm
+Flags=DTF_BINARY,DTF_CASE
+Priority=-10
