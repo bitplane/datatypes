@@ -55,6 +55,12 @@ Reads Netpbm PAM (`P7`) and the float maps PFM (`PF` colour, `Pf` gray, `PF4` RG
 Not supported: PNM images (`P1`–`P6`, left to AROS's `pnm` class, including inside a PAM stream), XV thumbnails (`P7 332`), and float map headers with comments or CRLF line ends, which the reference tools also reject or misread.
 The package includes its `Devs/DataTypes/PAM` descriptor. It matches `P` followed by two bytes, at priority -1, so AROS's PNM descriptors (priority 0) still take `P1`–`P6`. This also recognises `PF4`; unrelated matches are rejected by the decoder. `formats/pam/PAM.dtyp` is the compiled form of `PAM.dtd`; regenerate it with AROS's `createdtdesc -o formats/pam/PAM.dtyp formats/pam/PAM.dtd` if the recognition rules change.
 
+## XWD
+
+Reads X11 window dumps (version 7) in every visual class. ZPixmap images can have 1, 4, 8, 16, 24 or 32 bits per pixel, XYBitmap images have depth 1, and XYPixmap images can be any depth up to 32. Pixel data follows the header's byte order, bit order and scanline unit, as Xlib reads it. The header itself may be big-endian, as `xwd` writes it, or little-endian. Colours come from the file's colormap when it has one: palette visuals index it by pixel, and TrueColor and DirectColor index it per channel. Without a colormap, TrueColor and DirectColor scale each field by its mask, and gray visuals use a ramp in which 1-bit pixels are 0 white, 1 black. XWD has no alpha, so images load opaque. X10 dumps (version 6) and 2 or 12 bits per pixel are not supported.
+Saves 24-bit TrueColor in 32-bit big-endian pixels with no colormap, the layout an X server's own dumps use, compositing transparency over white. The package includes its `Devs/DataTypes/XWD` descriptor. It matches files named `#?.xwd`; the decoder validates the header and accepts either byte order.
+`formats/xwd/XWD.dtyp` is the compiled form of `XWD.dtd`; regenerate it with AROS's `createdtdesc -o formats/xwd/XWD.dtyp formats/xwd/XWD.dtd` if the recognition rules change.
+
 ## Build and test
 
 ```sh
