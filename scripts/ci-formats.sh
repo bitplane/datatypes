@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if (( $# != 3 )); then
+    echo 'usage: ci-formats.sh <base-commit> <head-commit> <event-name>' >&2
+    exit 2
+fi
+
+all_formats() {
+    find formats -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort
+}
+
+# A first push or a missing comparison commit cannot safely narrow the build.
+if ! git cat-file -e "$1^{commit}" 2>/dev/null ||
+   ! git cat-file -e "$2^{commit}" 2>/dev/null; then
+    all_formats
+    exit 0
+fi
+
+base=$1
+if [[ $3 == pull_request ]]; then
+    # Compare the PR's own changes, excluding commits added to master since it branched.
+    base=$(git merge-base "$1" "$2") || { all_formats; exit 0; }
+fi
+
+selected=()
+while IFS= read -r -d '' path; do
+    case "$path" in
+        formats/*/*)
+            format=${path#formats/}
+            selected+=("${format%%/*}")
+            ;;
+        tests/aros-check.c)
+            all_formats
+            exit 0
+            ;;
+        tests/*.c)
+            format=${path#tests/}
+            selected+=("${format%.c}")
+            ;;
+        README.md|LICENSE*|.gitignore|docs/*)
+            ;;
+        *)
+            # Shared code, build scripts, or an unclassified file may affect all formats.
+            all_formats
+            exit 0
+            ;;
+    esac
+done < <(git diff --name-only -z "$base" "$2" --)
+
+for format in "${selected[@]}"; do
+    if [[ -d "formats/$format" ]]; then
+        printf '%s\n' "$format"
+    fi
+done | sort -u
