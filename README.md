@@ -39,6 +39,11 @@ Reads X11 bitmaps (`char` arrays) and older X10 bitmaps (`short` arrays), accept
 Reads Farbfeld images: 16-bit big-endian RGBA with straight alpha. Channels are rounded to the nearest 8-bit value, and an image whose alpha is zero everywhere loads opaque. Bytes after the last pixel are ignored. Saves Farbfeld with each 8-bit channel widened exactly (times 257), so a saved image loads back unchanged. The package includes its `Devs/DataTypes/FARBFELD` descriptor, which recognises files by their `farbfeld` magic whatever their name.
 `formats/farbfeld/FARBFELD.dtyp` is the compiled form of `FARBFELD.dtd`; regenerate it with AROS's `createdtdesc -o formats/farbfeld/FARBFELD.dtyp formats/farbfeld/FARBFELD.dtd` if the recognition rules change.
 
+## XV thumbnail
+
+Reads XV thumbnails, the `P7 332` files XV, GIMP 1.x and makexvpics keep in `.xvpics` directories: 8-bit 3:3:2 RGB, expanded as `v * 255 / max` rounded down, as Pillow and netpbm do. Comment lines are skipped with or without `#END_OF_COMMENTS`, and the size line's maxval may be left out, but when present it must be 255. Saves XV thumbnails at the image's own size: pixels are composited over white, then each channel takes the nearest of the eight (or four, for blue) levels, as netpbm's `pamtoxvmini` does. There is no dithering, and the image is not scaled down to XV's 80×60. The package includes its `Devs/DataTypes/XVTHUMB` descriptor, which recognises files by their `P7 332` magic whatever their name.
+`formats/xvthumb/XVTHUMB.dtyp` is the compiled form of `XVTHUMB.dtd`; regenerate it with AROS's `createdtdesc -o formats/xvthumb/XVTHUMB.dtyp formats/xvthumb/XVTHUMB.dtd` if the recognition rules change.
+
 ## Build and test
 
 ```sh
