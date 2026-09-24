@@ -3,7 +3,7 @@ set -eu
 
 target=${1:?usage: build.sh <target> [datatype]}
 datatype=${2:-targa}
-case "$target" in i386-aros|aarch64-aros|x86_64-aros) ;; *) exit 2 ;; esac
+case "$target" in i386-aros|aarch64-aros|x86_64-aros|m68k-aros) ;; *) exit 2 ;; esac
 case "$datatype" in targa) ;; *) echo "Unknown datatype: $datatype" >&2; exit 2 ;; esac
 : "${AROS_SOURCE:=/opt/mountin/source}"
 : "${AROS_CC:=aros-cc}"

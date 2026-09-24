@@ -29,6 +29,8 @@ jobs:
             toolbox: aros/2026-08-31/aarch64:v0.1.1
           - target: x86_64-aros
             toolbox: aros/2026-08-31/x86_64:v0.1.8
+          - target: m68k-aros
+            toolbox: aros/2026-08-31/m68k:v0.1.9
     permissions:
       contents: read
       packages: read
