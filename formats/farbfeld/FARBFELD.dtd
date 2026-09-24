@@ -1,0 +1,8 @@
+Name=Farbfeld
+BaseName=farbfeld
+Pattern=#?
+Mask='f' 'a' 'r' 'b' 'f' 'e' 'l' 'd'
+GroupID=pict
+ID=farb
+Flags=DTF_BINARY,DTF_CASE
+Priority=0
