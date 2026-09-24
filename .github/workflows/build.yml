@@ -59,12 +59,14 @@ jobs:
           docker pull "$image"
           docker run --rm --volume "$PWD:/work" --workdir /work \
               "$image" sh scripts/build.sh "$TARGET" "$PACKAGE"
-      - name: Package release
-        if: ${{ startsWith(github.ref, 'refs/tags/') && startsWith(github.ref_name, format('{0}-', matrix.package)) }}
+      - name: Package datatype
+        if: ${{ !startsWith(github.ref, 'refs/tags/') || startsWith(github.ref_name, format('{0}-', matrix.package)) }}
         env:
           PACKAGE: ${{ matrix.package }}
           TARGET: ${{ matrix.target }}
-        run: sh scripts/aros/package.sh "$TARGET" "$PACKAGE" "${GITHUB_REF_NAME#*-}"
+        run: |
+          version=$(sed -n 's/^version //p' "formats/$PACKAGE/$PACKAGE.conf")
+          sh scripts/aros/package.sh "$TARGET" "$PACKAGE" "$version"
       - uses: actions/upload-artifact@v7
         if: ${{ !startsWith(github.ref, 'refs/tags/') || startsWith(github.ref_name, format('{0}-', matrix.package)) }}
         with:
