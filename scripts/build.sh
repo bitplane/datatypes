@@ -12,6 +12,14 @@ work="build/$target/$datatype"
 output="dist/$target"
 mkdir -p "$work" "$output"
 
+# The m68k SDK declares datatype method arguments as volatile registers.
+# GCC warns about those ABI declarations, which are outside this class's control.
+if [ "$target" = m68k-aros ]; then
+    set -- -Wno-volatile-register-var
+else
+    set --
+fi
+
 if [ -n "${GENMODULE:-}" ]; then
     generator=$GENMODULE
 else
@@ -26,7 +34,7 @@ fi
 config="formats/$datatype/$datatype.conf"
 "$generator" -c "$config" -d "$work" writelibdefs "$datatype" datatype
 "$generator" -c "$config" -d "$work" writefiles "$datatype" datatype
-"$AROS_CC" -std=gnu11 -Wall -Wextra -Werror -c \
+"$AROS_CC" -std=gnu11 -Wall -Wextra -Werror "$@" -c \
     "formats/$datatype/${datatype}class.c" -o "$work/class.o"
 "$AROS_CC" -std=c99 -Wall -Wextra -Werror -c \
     "formats/$datatype/decode.c" -o "$work/decode.o"
