@@ -1,0 +1,7 @@
+Name=XPM
+BaseName=xpm
+Pattern=#?.(xpm|xpm2)
+GroupID=pict
+ID=_xpm
+Flags=DTF_ASCII
+Priority=0
