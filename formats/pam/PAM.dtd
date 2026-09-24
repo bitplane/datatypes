@@ -1,0 +1,8 @@
+Name=PAM
+BaseName=pam
+Pattern=#?
+Mask='P' ANY 0x0a
+GroupID=pict
+ID=_pam
+Flags=DTF_BINARY,DTF_CASE
+Priority=-1
