@@ -36,8 +36,12 @@ Reads X11 bitmaps (`char` arrays) and older X10 bitmaps (`short` arrays), accept
 
 ## Farbfeld
 
-Reads Farbfeld images: 16-bit big-endian RGBA with straight alpha. Channels are rounded to the nearest 8-bit value, and an image whose alpha is zero everywhere loads opaque. Bytes after the last pixel are ignored. Saves Farbfeld with each 8-bit channel widened exactly (times 257), so a saved image loads back unchanged. The package includes its `Devs/DataTypes/FARBFELD` descriptor, which recognises files by their `farbfeld` magic whatever their name.
+Reads Farbfeld images: 16-bit big-endian RGBA with straight alpha. Channels are rounded to the nearest 8-bit value, including images whose alpha is zero everywhere. Bytes after the last pixel are ignored. Saves Farbfeld with each 8-bit channel widened exactly (times 257), so a saved image loads back unchanged. The package includes its `Devs/DataTypes/FARBFELD` descriptor, which recognises files by their `farbfeld` magic whatever their name.
 `formats/farbfeld/FARBFELD.dtyp` is the compiled form of `FARBFELD.dtd`; regenerate it with AROS's `createdtdesc -o formats/farbfeld/FARBFELD.dtyp formats/farbfeld/FARBFELD.dtd` if the recognition rules change.
+## MacPaint
+
+Reads MacPaint files, versions 0, 2 and 3, with or without a 128-byte MacBinary header in front, as 576×720 one-plane pictures in black on white. The version field and pattern table are ignored, as are padding and resource forks after the image. PackBits runs may cross rows, a `0x80` flag byte repeats the next byte 129 times as ImageMagick and netpbm read it, and a run past the last pixel is clipped. Files that end before the last row are rejected. Saves version 0 MacPaint with each row packed on its own: dark pixels (by luminance, after compositing over white) become black, smaller pictures are padded with white, and larger ones keep only their top-left 576×720. The package includes its `Devs/DataTypes/MACPAINT` descriptor. MacPaint has no magic number, so the descriptor matches the leading zero byte that both plain and MacBinary files start with, and requires a `#?.(mac|macp|pntg|pnt)` name, at priority -10. MacBinary files named `.bin` aren't recognised.
+`formats/macpaint/MACPAINT.dtyp` is the compiled form of `MACPAINT.dtd`; regenerate it with AROS's `createdtdesc -o formats/macpaint/MACPAINT.dtyp formats/macpaint/MACPAINT.dtd` if the recognition rules change.
 
 ## Build and test
 
