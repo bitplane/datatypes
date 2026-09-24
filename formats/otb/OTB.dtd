@@ -1,0 +1,8 @@
+Name=OTB
+BaseName=otb
+Pattern=#?.otb
+Mask=ANY ANY ANY ANY
+GroupID=pict
+ID=_otb
+Flags=DTF_BINARY,DTF_CASE
+Priority=-10
