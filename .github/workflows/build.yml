@@ -1,4 +1,4 @@
-name: AROS compiler checks
+name: AROS datatype checks
 
 on:
   push:
@@ -10,6 +10,12 @@ permissions:
   contents: read
 
 jobs:
+  decoder:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - run: make test
+
   sdk:
     name: ${{ matrix.target }}
     runs-on: ubuntu-24.04
@@ -28,7 +34,7 @@ jobs:
       packages: read
     steps:
       - uses: actions/checkout@v6
-      - name: Check AROS SDK
+      - name: Build Targa datatype
         env:
           GH_TOKEN: ${{ github.token }}
           TOOLBOX: ${{ matrix.toolbox }}
@@ -39,4 +45,8 @@ jobs:
               --username "$GITHUB_ACTOR" --password-stdin
           docker pull "$image"
           docker run --rm --volume "$PWD:/work" --workdir /work \
-              "$image" sh scripts/ci-build.sh "$TARGET"
+              "$image" sh scripts/build.sh "$TARGET" targa
+      - uses: actions/upload-artifact@v4
+        with:
+          name: targa-${{ matrix.target }}
+          path: dist/${{ matrix.target }}/targa.datatype
