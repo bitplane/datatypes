@@ -39,6 +39,17 @@ Reads X11 bitmaps (`char` arrays) and older X10 bitmaps (`short` arrays), accept
 Reads Farbfeld images: 16-bit big-endian RGBA with straight alpha. Channels are rounded to the nearest 8-bit value, and an image whose alpha is zero everywhere loads opaque. Bytes after the last pixel are ignored. Saves Farbfeld with each 8-bit channel widened exactly (times 257), so a saved image loads back unchanged. The package includes its `Devs/DataTypes/FARBFELD` descriptor, which recognises files by their `farbfeld` magic whatever their name.
 `formats/farbfeld/FARBFELD.dtyp` is the compiled form of `FARBFELD.dtd`; regenerate it with AROS's `createdtdesc -o formats/farbfeld/FARBFELD.dtyp formats/farbfeld/FARBFELD.dtd` if the recognition rules change.
 
+## DDS
+
+Reads DirectDraw Surface textures. Block-compressed images can be DXT1, DXT3 or DXT5 (BC1 to BC3), ATI1/BC4U (BC4, shown gray), or ATI2, BC5U and BC5S (BC5: red and green, with blue 0; signed values show as v + 128 with blue 128). DX10 headers add BC1 to BC5, BC6H and BC7. Uncompressed images can use any 8 to 32-bit RGB, luminance or alpha-only layout described by bit masks, 8-bit palettes, or the DX10 formats R8G8B8A8, B8G8R8A8, B8G8R8X8 and R10G10B10A2. BC6H is HDR: values are clamped to 0-1 and encoded with the sRGB curve. DXT1 blocks can be transparent. Alpha in other uncompressed formats and palettes counts only when the header declares it. DX10 premultiplied alpha is converted to straight alpha, and DX10's opaque alpha mode is honoured. An alpha channel that is zero everywhere loads opaque.
+
+Mip levels, cube faces, array slices and volume slices are separate pictures, counted in file order: each face or slice in turn, then its mip levels from largest to smallest. Without `PDTA_WhichPicture` the first one loads. Levels missing from the end of a file aren't counted. A file whose first picture is cut short fails to load. Each picture can have at most 16M pixels.
+
+Not supported: DXT2 and DXT4 (premultiplied DXT3 and DXT5), BC4 signed, RXGB, YUV formats, the float and 16-bit-per-channel D3D formats, and DX10 formats other than those above, including the `_SRGB` codes of BC1 to BC3 and B8G8R8A8. Neither ImageMagick nor Pillow reads these.
+
+Saves uncompressed DDS with one image and no mip levels: 24-bit RGB when every pixel is opaque, 32-bit ARGB otherwise.
+The package includes its `Devs/DataTypes/DDS` descriptor, which matches the `DDS ` magic and the 124-byte header size on files named `#?.dds`. `formats/dds/DDS.dtyp` is the compiled form of `DDS.dtd`; regenerate it with AROS's `createdtdesc -o formats/dds/DDS.dtyp formats/dds/DDS.dtd` if the recognition rules change.
+
 ## Build and test
 
 ```sh
