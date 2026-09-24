@@ -137,6 +137,9 @@ int main(void)
     fails("#define a_width 8\n#define a_height 2\nchar a_bits[] = {1};", CODEC_TRUNCATED);
     fails("#define a_width 8\n#define a_height 2\nchar a_bits[] = {1,", CODEC_TRUNCATED);
     fails("#define a_width 8\n#define a_height 2\nchar a_bits[] = {1, }", CODEC_TRUNCATED);
+    fails("#define a_width 8\n#define a_height 1\nchar a_bits[] = {1", CODEC_TRUNCATED);
+    fails("#define a_width 8\n#define a_height 1\nchar a_bits[] = {1,", CODEC_TRUNCATED);
+    fails("#define a_width 8\n#define a_height 1\nchar a_bits[] = {1;", CODEC_INVALID);
     fails("#define a_width 8\n#define a_height 1\n/* unterminated", CODEC_TRUNCATED);
     fails("#define a_width 8\n#define a_height 1\nint x = { 1", CODEC_TRUNCATED);
     fails("#define a_width 8\nchar a_bits[] = {1};", CODEC_INVALID);

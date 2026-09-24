@@ -262,6 +262,27 @@ static enum codec_result read_bits(struct lexer *lx, unsigned unit_bits,
                 return CODEC_INVALID;
         }
     }
+    /* Xlib ignores surplus initializer values; still require a closing brace. */
+    for (;;) {
+        struct token t = lex(lx);
+        if (t.kind == T_END)
+            return CODEC_TRUNCATED;
+        if (is_punct(t, '}'))
+            break;
+        if (!is_punct(t, ','))
+            return CODEC_INVALID;
+        t = lex(lx);
+        if (t.kind == T_END)
+            return CODEC_TRUNCATED;
+        if (is_punct(t, '}'))
+            break;
+        if (is_punct(t, '-'))
+            t = lex(lx);
+        if (t.kind == T_END)
+            return CODEC_TRUNCATED;
+        if (t.kind != T_NUMBER)
+            return CODEC_INVALID;
+    }
     return CODEC_OK;
 }
 
