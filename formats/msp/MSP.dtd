@@ -1,0 +1,8 @@
+Name=MSP
+BaseName=msp
+Pattern=#?.msp
+Mask=ANY ANY 'n' ANY
+GroupID=pict
+ID=msp_
+Flags=DTF_BINARY,DTF_CASE
+Priority=0
