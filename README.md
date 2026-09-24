@@ -71,6 +71,11 @@ Reads Nokia OTA bitmaps (`.otb`), the 1-bit format of operator logos and picture
 Reads Microsoft Paint images from Windows 1 (`DanM`, uncompressed) and Windows 2 (`LinS`, run-length encoded by row). Images load as one-plane pictures, black and white. The header checksum isn't checked. In version 2 files, a row whose packed size is zero, or whose runs stop short, is white to its end, and a run past the end of its row is cut off. Saves version 1 files: pixels are composited over white, then set white if their luminance is at least half. The package includes its `Devs/DataTypes/MSP` descriptor. The two versions' keys share only their third byte, `n`, so the descriptor matches that byte and requires a `.msp` name.
 `formats/msp/MSP.dtyp` is the compiled form of `MSP.dtd`; regenerate it with AROS's `createdtdesc -o formats/msp/MSP.dtyp formats/msp/MSP.dtd` if the recognition rules change.
 
+## NEOchrome
+
+Reads Atari ST NEOchrome `.neo` pictures in all three screen modes: low resolution (320×200, 16 colours), medium (640×200, 4 colours) and high (640×400, black on white). ST palettes use 3 bits per gun, scaled as netpbm scales them. A palette counts as STE, with 4 bits per gun, when one of the colours the mode uses has a fourth bit set; colours the mode doesn't use often hold junk, so they are ignored. Colour-cycling data and bytes after the image are ignored. Files whose flag word isn't zero or whose resolution isn't 0–2 are rejected. Saves NEOchrome when the picture is one of the three screen sizes and, after compositing over white, fits that mode's palette exactly with ST or STE levels. Other pictures can't be saved, because the format can't hold them without loss. The package includes its `Devs/DataTypes/NEO` descriptor. NEOchrome has no magic number, so the descriptor matches the zero flag word and the high byte of the resolution, requires a `.neo` name, and has priority -10.
+`formats/neo/NEO.dtyp` is the compiled form of `NEO.dtd`; regenerate it with AROS's `createdtdesc -o formats/neo/NEO.dtyp formats/neo/NEO.dtd` if the recognition rules change.
+
 ## Build and test
 
 ```sh
