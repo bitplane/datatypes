@@ -20,13 +20,28 @@ jobs:
         run: sh scripts/tag-package.sh "$GITHUB_REF_NAME"
       - run: make test
 
+  formats:
+    runs-on: ubuntu-24.04
+    outputs:
+      list: ${{ steps.list.outputs.list }}
+    steps:
+      - uses: actions/checkout@v6
+      - id: list
+        run: |
+          if [ "$GITHUB_REF_TYPE" = tag ]; then
+              sh scripts/tag-package.sh "$GITHUB_REF_NAME" | cut -d' ' -f1
+          else
+              ls formats
+          fi | jq -Rnc '[inputs]' | sed 's/^/list=/' >> "$GITHUB_OUTPUT"
+
   sdk:
     name: ${{ matrix.package }}-${{ matrix.target }}
+    needs: formats
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
-        package: [targa, pcx, qoi]
+        package: ${{ fromJSON(needs.formats.outputs.list) }}
         target: [i386-aros, aarch64-aros, x86_64-aros, m68k-aros]
         include:
           - target: i386-aros
@@ -42,11 +57,7 @@ jobs:
       packages: read
     steps:
       - uses: actions/checkout@v6
-      - name: Check release tag
-        if: startsWith(github.ref, 'refs/tags/')
-        run: sh scripts/tag-package.sh "$GITHUB_REF_NAME"
       - name: Build datatype
-        if: ${{ !startsWith(github.ref, 'refs/tags/') || startsWith(github.ref_name, format('{0}-', matrix.package)) }}
         env:
           GH_TOKEN: ${{ github.token }}
           TOOLBOX: ${{ matrix.toolbox }}
@@ -60,7 +71,6 @@ jobs:
           docker run --rm --volume "$PWD:/work" --workdir /work \
               "$image" sh scripts/build.sh "$TARGET" "$PACKAGE"
       - name: Package datatype
-        if: ${{ !startsWith(github.ref, 'refs/tags/') || startsWith(github.ref_name, format('{0}-', matrix.package)) }}
         env:
           PACKAGE: ${{ matrix.package }}
           TARGET: ${{ matrix.target }}
@@ -69,7 +79,6 @@ jobs:
           version=$(sed -n 's/^version //p' "formats/$PACKAGE/$PACKAGE.conf")
           sh scripts/aros/package.sh "$TARGET" "$PACKAGE" "$version"
       - uses: actions/upload-artifact@v7
-        if: ${{ !startsWith(github.ref, 'refs/tags/') || startsWith(github.ref_name, format('{0}-', matrix.package)) }}
         with:
           name: ${{ matrix.package }}-${{ matrix.target }}
           path: |
