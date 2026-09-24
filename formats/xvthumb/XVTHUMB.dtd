@@ -1,0 +1,8 @@
+Name=XVThumb
+BaseName=xvthumb
+Pattern=#?
+Mask='P' '7' ' ' '3' '3' '2'
+GroupID=pict
+ID=xvth
+Flags=DTF_BINARY,DTF_CASE
+Priority=0
