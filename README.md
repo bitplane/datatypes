@@ -17,4 +17,4 @@ The module is written to `dist/<target>/targa.datatype` and installs at `Classes
 
 ## Versions
 
-Each datatype has its own two-number module and package version. Release tags identify one format, for example `targa-45.1`; changes to another format do not change Targa's version.
+Each datatype has its own two-number module and package version. Release tags identify one format, for example `targa-1.0`; changes to another format do not change Targa's version.
