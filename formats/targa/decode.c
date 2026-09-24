@@ -17,6 +17,12 @@ static unsigned le16(const uint8_t *p)
     return (unsigned)p[0] | ((unsigned)p[1] << 8);
 }
 
+static uint32_t le32(const uint8_t *p)
+{
+    return (uint32_t)p[0] | ((uint32_t)p[1] << 8) |
+           ((uint32_t)p[2] << 16) | ((uint32_t)p[3] << 24);
+}
+
 static int take(struct reader *r, uint8_t *out, size_t count)
 {
     if (count > r->size - r->pos)
@@ -110,6 +116,7 @@ enum tga_result tga_decode(const uint8_t *data, size_t length,
     unsigned type, base_type, depth, width, height, descriptor;
     unsigned palette_first, palette_count, palette_depth, palette_bytes;
     unsigned i, n, packet, run, source_x, source_y, dest_x, dest_y;
+    unsigned alpha_type = 3;
     size_t pixels, offset;
     enum tga_result result;
 
@@ -132,6 +139,16 @@ enum tga_result tga_decode(const uint8_t *data, size_t length,
     height = le16(data + 14);
     depth = data[16];
     descriptor = data[17];
+    if (length >= 26 &&
+        memcmp(data + length - 18, "TRUEVISION-XFILE.\0", 18) == 0) {
+        uint32_t extension = le32(data + length - 26);
+        if (extension != 0) {
+            if (extension > length - 26 || length - 26 - extension < 495 ||
+                le16(data + extension) < 495)
+                return TGA_INVALID;
+            alpha_type = data[extension + 494];
+        }
+    }
     if (width == 0 || height == 0 || (descriptor & 0xc0u) != 0)
         return TGA_INVALID;
     if ((base_type == 1 && (depth != 8 && depth != 16)) ||
@@ -216,6 +233,23 @@ enum tga_result tga_decode(const uint8_t *data, size_t length,
             offset = ((size_t)dest_y * width + dest_x) * 4u;
             memcpy(image->rgba + offset, pixel, 4);
             i++;
+        }
+    }
+    if (alpha_type != 2 && alpha_type != 3) {
+        for (i = 0; i < pixels; i++) {
+            uint8_t *rgba = image->rgba + (size_t)i * 4u;
+            unsigned a = rgba[3];
+            if (alpha_type == 4 && a != 0 && a != 255) {
+                unsigned channel;
+                for (channel = 0; channel < 3; channel++) {
+                    unsigned straight = (rgba[channel] * 255u + a / 2u) / a;
+                    rgba[channel] = (uint8_t)(straight > 255u ? 255u : straight);
+                }
+            } else if (alpha_type == 4 && a == 0) {
+                rgba[0] = rgba[1] = rgba[2] = 0;
+            }
+            if (alpha_type != 4)
+                rgba[3] = 255;
         }
     }
     free(palette);

@@ -1,6 +1,6 @@
 PACKAGE ?= targa
 
-.PHONY: test build
+.PHONY: test build release
 
 test:
 	mkdir -p build
@@ -9,3 +9,6 @@ test:
 
 build:
 	sh scripts/build.sh $(TARGET) $(PACKAGE)
+
+release:
+	sh scripts/release.sh $(PACKAGE) $(LEVEL) $(DRY_RUN)

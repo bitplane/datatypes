@@ -58,6 +58,26 @@ static void expect_encoded(unsigned width, unsigned bytes_per_pixel,
     tga_free(&image);
 }
 
+static void expect_extension_alpha(unsigned type, const uint8_t expected[4])
+{
+    uint8_t data[18 + 4 + 495 + 26] = {0};
+    struct tga_image image;
+    const size_t extension = 22;
+    const size_t footer = extension + 495;
+
+    header(data, 2, 1, 1, 32, 0x28);
+    data[18] = 16; data[19] = 32; data[20] = 64; data[21] = 128;
+    data[extension] = 495 & 255;
+    data[extension + 1] = 495 >> 8;
+    data[extension + 494] = (uint8_t)type;
+    data[footer] = (uint8_t)extension;
+    memcpy(data + footer + 8, "TRUEVISION-XFILE.\0", 18);
+    expect(data, sizeof data, expected, 1, 1);
+    data[footer] = 255;
+    data[footer + 1] = 255;
+    assert(tga_decode(data, sizeof data, &image) == TGA_INVALID);
+}
+
 int main(void)
 {
     uint8_t data[64] = {0};
@@ -115,6 +135,22 @@ int main(void)
     header(data, 2, 1, 1, 16, 0x21);
     data[18] = 0; data[19] = 0xfc; /* opaque red in 5:5:5:1 */
     expect(data, 20, red, 1, 1);
+    data[19] = 0x7c;
+    {
+        const uint8_t transparent_red[4] = {255, 0, 0, 0};
+        expect(data, 20, transparent_red, 1, 1);
+    }
+
+    {
+        const uint8_t raw_alpha[4] = {64, 32, 16, 128};
+        const uint8_t no_alpha[4] = {64, 32, 16, 255};
+        const uint8_t straight_alpha[4] = {128, 64, 32, 128};
+        expect_extension_alpha(0, no_alpha);
+        expect_extension_alpha(1, no_alpha);
+        expect_extension_alpha(2, raw_alpha);
+        expect_extension_alpha(3, raw_alpha);
+        expect_extension_alpha(4, straight_alpha);
+    }
 
     header(data, 10, 1, 1, 24, 0x20);
     data[18] = 0x81; /* two-pixel packet into one-pixel image */
