@@ -65,6 +65,7 @@ jobs:
           PACKAGE: ${{ matrix.package }}
           TARGET: ${{ matrix.target }}
         run: |
+          sudo chown -R "$(id -u):$(id -g)" dist
           version=$(sed -n 's/^version //p' "formats/$PACKAGE/$PACKAGE.conf")
           sh scripts/aros/package.sh "$TARGET" "$PACKAGE" "$version"
       - uses: actions/upload-artifact@v7
