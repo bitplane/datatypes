@@ -1,0 +1,8 @@
+Name=ZX Spectrum screen
+BaseName=zxscr
+Pattern=#?.scr
+Mask=ANY ANY ANY ANY ANY ANY ANY ANY ANY ANY ANY ANY ANY ANY ANY ANY ANY ANY ANY ANY ANY ANY ANY ANY ANY ANY ANY ANY ANY ANY ANY ANY
+GroupID=pict
+ID=zxsc
+Flags=DTF_BINARY,DTF_CASE
+Priority=-10
