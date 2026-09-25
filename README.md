@@ -10,6 +10,7 @@ In the Descriptor column, "AROS" means AROS already ships the `Devs/DataTypes` d
 | [Amiga icons](formats/info/) | `.info` | Project icon | ours |
 | [Atari Falcon and TT](formats/falcon/) | `.god` `.tru` `.trp` `.tcp` `.pnt` `.tpi` `.dc1` `.pi4` and more | 24-bit Prism Paint | ours |
 | [Atari ST compressed paint](formats/stpaint/) | `.tny` `.ca1` `.ic1` `.pac` `.lpk` `.ppp` `.cp3` `.psc` and more | Tiny | ours |
+| [Atari ST multi-palette](formats/stmulti/) | `.mpp` `.pcs` | Nothing | ours |
 | [Atari ST screens](formats/stscreen/) | `.sta` `.doo` `.sc0` `.pg1` `.sd0` `.eza` `.ce1` and more | Paintworks | ours |
 | [AVS and AAI](formats/avs/) | `.avs` `.x` `.aai` | AVS or AAI | ours |
 | [BLP](formats/blp/) | `.blp` | BLP2, one level | ours |
@@ -18,13 +19,16 @@ In the Descriptor column, "AROS" means AROS already ships the `Devs/DataTypes` d
 | [CompuServe RLE](formats/cis/) | `.rle` `.cis` | 128×96 or 256×192 | ours |
 | [DCX](formats/dcx/) | `.dcx` | One-page 24-bit RGB | ours |
 | [DDS](formats/dds/) | `.dds` | 24-bit RGB or 32-bit ARGB | ours |
+| [Dr. Halo CUT](formats/halocut/) | `.cut` | none | ours |
 | [Farbfeld](formats/farbfeld/) | `.ff` | 16-bit RGBA | ours |
 | [FAX](formats/fax/) | `.g3` `.fax` `.cal` `.cals` `.ct1` `.c4` `.mil` `.ras` | Raw Group 3 MH | ours |
 | [FTEX](formats/ftex/) | `.ftc` `.ftu` | Uncompressed 24-bit `.ftu` | ours |
+| [GD and GD2](formats/gd/) | `.gd` `.gd2` | GD 2.x truecolour | ours |
 | [ICNS](formats/icns/) | `.icns` | Square icons, one image | ours |
 | [ICO](formats/ico/) | `.ico` `.cur` | One-image BMP icon or cursor | ours |
 | [Japanese PC pictures](formats/japanpc/) | `.mag` `.max` `.mki` `.pi` `.pic` | MAG | ours |
 | [JBIG](formats/jbig/) | `.jbg` `.jbig` `.bie` | One-plane sequential | ours |
+| [Khoros VIFF](formats/viff/) | `.viff` `.xv` | 8-bit RGB or RGBA | ours |
 | [KiSS CEL](formats/kisscel/) | `.cel` | 32-bit cel | ours |
 | [Lunapaint](formats/lunapaint/) | none | One layer, one frame | AROS |
 | [MacPaint](formats/macpaint/) | `.mac` `.macp` `.pntg` `.pnt` | Version 0 | ours |
@@ -39,7 +43,9 @@ In the Descriptor column, "AROS" means AROS already ships the `Devs/DataTypes` d
 | [PAM and PFM](formats/pam/) | `.pam` `.pfm` `.phm` | 8-bit PAM | ours |
 | [PCX](formats/pcx/) | `.pcx` | 24-bit RGB | AROS |
 | [Pixar](formats/pixar/) | `.pxr` `.pic` `.picio` `.pixar` | 8-bit RGB or RGBA | ours |
+| [PowerVR PVR](formats/pvr/) | `.pvr` | 8-bit RGB or RGBA | ours |
 | [QOI](formats/qoi/) | `.qoi` | RGB or RGBA | ours |
+| [Scitex CT](formats/sct/) | `.sct` `.ct` `.ch` | Grayscale or CMY | ours |
 | [SGI](formats/sgi/) | `.rgb` `.rgba` `.bw` `.sgi` `.int` `.inta` | 8-bit RLE gray, RGB or RGBA | ours |
 | [SIXEL](formats/sixel/) | `.six` `.sixel` | RGB, up to 256 colours | ours |
 | [Spectrum 512](formats/spectrum/) | `.spu` `.spc` | SPU, if the colours fit | ours |
