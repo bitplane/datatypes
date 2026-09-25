@@ -1,0 +1,8 @@
+Name=Pixar
+BaseName=pixar
+Pattern=#?.(pxr|pic|picio|pixar)
+Mask=0x80 0xe8 0x00 0x00
+GroupID=pict
+ID=_pxr
+Flags=DTF_BINARY,DTF_CASE
+Priority=0

@@ -182,6 +182,17 @@ Not supported: DXT2 and DXT4 (premultiplied DXT3 and DXT5), BC4 signed, RXGB, YU
 Saves uncompressed DDS with one image and no mip levels: 24-bit RGB when every pixel is opaque, 32-bit ARGB otherwise.
 The package includes its `Devs/DataTypes/DDS` descriptor, which matches the `DDS ` magic and the 124-byte header size on files named `#?.dds`. `formats/dds/DDS.dtyp` is the compiled form of `DDS.dtd`; regenerate it with AROS's `createdtdesc -o formats/dds/DDS.dtyp formats/dds/DDS.dtd` if the recognition rules change.
 
+## Pixar
+
+Reads 8-bit Pixar Image Computer (picio) pictures: the `.pxr` files Photoshop writes, and the `.pic` files from Pixar's own software and from tools like Altamira Composer. RGB and RGBA load as they are. A single channel loads as grey, and red plus alpha loads as grey with alpha. Pixels can be dumped raw or encoded as run-length packets split into disk blocks, in one tile or many. Edge tiles are stored full size, and the loader drops the part outside the picture. A null tile shows as black, or as transparent when the picture has alpha. Matted-to-black alpha is premultiplied, so the loader converts it to straight alpha. Unassociated alpha loads unchanged, even when it is zero everywhere.
+
+12-bit storage is not supported. Its samples are fixed point, with 1.0 at 2048 and headroom above white, and no 12-bit sample files turned up to test against. Other channel combinations are rejected too.
+
+Saves one dumped 8-bit tile at offset 1024, the layout Photoshop writes. An opaque picture is saved as RGB, which Pillow can read. Anything with transparency is saved as RGBA with unassociated alpha.
+
+The package includes its `Devs/DataTypes/PIXAR` descriptor. It matches the magic `80 E8 00 00` in files named `.pxr`, `.pic`, `.picio` or `.pixar`.
+`formats/pixar/PIXAR.dtyp` is the compiled form of `PIXAR.dtd`; regenerate it with AROS's `createdtdesc -o formats/pixar/PIXAR.dtyp formats/pixar/PIXAR.dtd` if the recognition rules change.
+
 ## SIXEL
 
 Reads DEC SIXEL images, the terminal graphics that libsixel, ImageMagick, netpbm's `ppmtosixel` and gnuplot write. An image is a device control string that opens with `ESC P` or the 8-bit `0x90`, then parameters and `q`, and closes with `ESC \` or `0x9C`. Text and escape sequences before it, as in terminal captures, are skipped. Colours can be RGB or HLS (DEC's hues, so 0 is blue), and there are 1024 registers. Unset registers start as the VT340's 16 colours, then xterm's 6×6×6 cube and grey ramp, as in ImageMagick. A register holds its last definition, so redefining one recolours pixels already drawn, as on a VT340. The raster attributes give the smallest size, and drawing past them makes the image bigger. When P2 is 1, pixels that are never drawn are transparent. Otherwise they take register 0. The pixel aspect ratio (P1, and Pan and Pad) is ignored, as ImageMagick and most terminals ignore it. Line breaks can fall anywhere, even inside a number. A file can hold several images, such as the frames of an animation. `PDTA_WhichPicture` picks one, the first by default, and `PDTA_GetNumPictures` reports how many there are. A file that ends before the string terminator is rejected as truncated.
