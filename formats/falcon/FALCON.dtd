@@ -1,0 +1,7 @@
+Name=Falcon
+BaseName=falcon
+Pattern=#?.(god|tru|tg1|tcp|trp|pnt|tpi|dg1|dgu|dc1|pi4|pi5|pi6|pi7|pi9|ftc)
+GroupID=pict
+ID=falc
+Flags=DTF_BINARY
+Priority=-11

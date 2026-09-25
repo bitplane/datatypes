@@ -1,0 +1,8 @@
+Name=ST Paint PAC
+BaseName=stpaint
+Pattern=#?.pac
+Mask='p' 'M' '8' ANY
+GroupID=pict
+ID=stpc
+Flags=DTF_BINARY,DTF_CASE
+Priority=-9

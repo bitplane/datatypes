@@ -1,0 +1,7 @@
+Name=JapanPC
+BaseName=japanpc
+Pattern=#?.(mag|max|mki|pi|pic)
+GroupID=pict
+ID=_jpc
+Flags=DTF_BINARY
+Priority=-10

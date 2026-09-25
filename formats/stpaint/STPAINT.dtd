@@ -1,0 +1,7 @@
+Name=ST Paint
+BaseName=stpaint
+Pattern=#?.(tny|tn[1-6]|ca[1-3]|ic[1-3]|lpk|mpk|hpk|ppp|pa3|cp3|psc)
+GroupID=pict
+ID=stpt
+Flags=DTF_BINARY
+Priority=-10

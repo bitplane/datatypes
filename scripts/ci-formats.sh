@@ -39,7 +39,7 @@ while IFS= read -r -d '' path; do
                 fi
             done
             ;;
-        Makefile|CLAUDE.md|scripts/ci-formats.sh)
+        Makefile|CLAUDE.md|scripts/ci-formats.sh|scripts/aros/package.sh)
             # The decoder job covers host build changes; these do not alter SDK builds.
             ;;
         tests/aros-check.c)
