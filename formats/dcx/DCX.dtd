@@ -1,0 +1,8 @@
+Name=DCX
+BaseName=dcx
+Pattern=#?
+Mask=0xb1 0x68 0xde 0x3a
+GroupID=pict
+ID=_dcx
+Flags=DTF_BINARY,DTF_CASE
+Priority=0

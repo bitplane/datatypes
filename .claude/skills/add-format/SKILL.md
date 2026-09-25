@@ -27,6 +27,7 @@ The goal of the project is loader parity with ImageMagick, Pillow and netpbm on 
 
 ## 3. Scope
 
+- **Fit:** only add a format if an 8-bit RGBA picture can show what the format is for. Reducing precision is fine (16-bit or 10-bit channels to 8-bit, as the stock PNG and TIFF classes do). Losing dynamic range, vectors or layers is not: no HDR or science-data loaders, and no vector formats that only show embedded bitmaps. If faithful display needs compositing or rendering, implement all of it or don't add the format. If a queued format fails this test, stop and report instead of building it.
 - **Reading:** support every variant that at least two of the reference tools read. Add variants that only one reads where practical. Reject the rest with `CODEC_INVALID`, and list them as unsupported in the format's README section.
 - **Writing:** implement `DTM_WRITE` wherever the format has a sensible writer, choosing the simplest lossless variant that covers the image (for example opaque vs alpha, like Targa's 24/32-bit choice). Read-only is fine where writing makes no sense.
 - **Multi-image files** (pages, frames, mipmaps, icon directories, layers): support `PDTA_WhichPicture` (the index to load, in file order) and `PDTA_GetNumPictures` (a `ULONG *` filled in with the count), both given in `OM_NEW`'s tags. `dt_new` doesn't pass tags to the loader, so write your own `OM_NEW` that reads them from `msg->ops_AttrList`. When no index is requested, load the first image for pages, frames and mipmaps (as AROS's stock classes do), and the largest, then deepest, image for icon formats.
@@ -44,8 +45,8 @@ The goal of the project is loader parity with ImageMagick, Pillow and netpbm on 
   - Preserve alpha when the format requires it or the header explicitly declares it, including images whose alpha is zero everywhere. Treat all-zero alpha as absent only for a documented format-specific convention backed by real files.
   - Don't infer optional alpha from storage depth alone; use the format's alpha flag or attribute bits.
   - When saving to a variant without alpha, composite over white.
-- **High bit depth:** round 16-bit channels to 8-bit. For float data, clamp to 0–1, then apply the sRGB transfer curve.
-- **Compression and other libraries:** use AROS system libraries through their standard C API. For zlib that means `z1.library` via a `common/zlib.h` wrapper. If the wrapper doesn't exist yet, the format is blocked: stop and report. Never vendor third-party code.
+- **High bit depth:** round 16-bit and other deep integer channels to 8-bit. Float or HDR variants inside an otherwise fitting format are unsupported (`CODEC_INVALID`), per **Fit**.
+- **Compression and other libraries:** use AROS system libraries through their standard C API. For zlib that means `common/zlib.h` over `z1.library`. For other libraries with no wrapper yet, stop and report. Never vendor third-party code.
 - **Portability:** nothing OS-specific in codecs. Only the class glue and `common/dt*` may touch AROS, so the codecs could later serve other Amiga-family systems.
 
 ## 5. Descriptor
