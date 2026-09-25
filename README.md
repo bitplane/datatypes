@@ -205,6 +205,15 @@ Not supported: DXT2 and DXT4 (premultiplied DXT3 and DXT5), BC4 signed, RXGB, YU
 Saves uncompressed DDS with one image and no mip levels: 24-bit RGB when every pixel is opaque, 32-bit ARGB otherwise.
 The package includes its `Devs/DataTypes/DDS` descriptor, which matches the `DDS ` magic and the 124-byte header size on files named `#?.dds`. `formats/dds/DDS.dtyp` is the compiled form of `DDS.dtd`; regenerate it with AROS's `createdtdesc -o formats/dds/DDS.dtyp formats/dds/DDS.dtd` if the recognition rules change.
 
+## FTEX
+
+Reads FTEX textures from Independence War 2 (`.ftc` compressed and `.ftu` uncompressed files). Formats can be DXT1 (BC1), whose three-colour blocks can be transparent, or 24-bit RGB. A file can hold several formats, each with its own chain of mip levels. They are separate pictures, counted in file order: each format in the directory in turn, then its mip levels from largest to smallest. Without `PDTA_WhichPicture` the first one loads, as in Pillow. Levels missing from the end of a file aren't counted, and a file whose first picture is cut short fails to load. A level may hold more bytes than its pixels need. A declared level count of 0 still reads the top level. Directory entries with other format numbers are skipped. Each picture can have at most 16M pixels.
+
+Only Pillow reads FTEX. ImageMagick and netpbm don't. The decoder matches Pillow pixel for pixel. Pillow also reads only the first picture, and it rejects files with more than one format.
+
+Saves an uncompressed (`.ftu`) file with one 24-bit RGB format and one mip level, compositing transparency over white.
+The package includes its `Devs/DataTypes/FTEX` descriptor, which matches the `FTEX` magic on files named `#?.ftc` or `#?.ftu`. `formats/ftex/FTEX.dtyp` is the compiled form of `FTEX.dtd`; regenerate it with AROS's `createdtdesc -o formats/ftex/FTEX.dtyp formats/ftex/FTEX.dtd` if the recognition rules change.
+
 ## Pixar
 
 Reads 8-bit Pixar Image Computer (picio) pictures: the `.pxr` files Photoshop writes, and the `.pic` files from Pixar's own software and from tools like Altamira Composer. RGB and RGBA load as they are. A single channel loads as grey, and red plus alpha loads as grey with alpha. Pixels can be dumped raw or encoded as run-length packets split into disk blocks, in one tile or many. Edge tiles are stored full size, and the loader drops the part outside the picture. A null tile shows as black, or as transparent when the picture has alpha. Matted-to-black alpha is premultiplied, so the loader converts it to straight alpha. Unassociated alpha loads unchanged, even when it is zero everywhere.
