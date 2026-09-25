@@ -1,0 +1,8 @@
+Name=SIXEL
+BaseName=sixel
+Pattern=#?.(six|sixel)
+Mask=0x1b
+GroupID=pict
+ID=sixl
+Flags=DTF_ASCII,DTF_CASE
+Priority=0
