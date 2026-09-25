@@ -225,7 +225,7 @@ Saves a one-image cursor with its hotspot at the top left and its larger side as
 
 Reads Workbench `.info` icons, in every form an icon keeps its images in:
 
-- **Planar images** (OS 1.x to 3.1), with one to three planes. The file holds no colours, so pens take Workbench's defaults: the OS 1.3 blue, white, black and orange for revision 0 icons, as netpbm shows them; the OS 2 grey, black, white and blue for later ones; and MagicWB's eight colours for images that reach pens 4 to 7. Pen 0 is opaque, as Workbench draws it. PlanePick and PlaneOnOff are applied, so a selected image with PlanePick 0 is a solid PlaneOnOff pen, as `DrawImage` draws it.
+- **Planar images** (OS 1.x to 3.1), of any depth. The file holds no colours, so pens take Workbench's defaults: the OS 1.3 blue, white, black and orange for revision 0 icons, as netpbm shows them; the OS 2 grey, black, white and blue for later ones; MagicWB's eight colours for images that reach pens 4 to 7; and for deeper images, AROS's default screen palette at the image's depth, which adds red, green, dark blue and yellow as the last four pens and the pointer's reds as pens 17 to 19, with the other pens black. Most 8-plane icons use just those pens; 4- to 6-plane sets that shipped their own palette show their other pens black, as AROS draws them. Pen 0 is opaque, as Workbench draws it. PlanePick and PlaneOnOff are applied, so a selected image with PlanePick 0 is a solid PlaneOnOff pen, as `DrawImage` draws it.
 - **NewIcons** held in `IM1=` and `IM2=` tooltypes after the `*** DON'T EDIT THE FOLLOWING LINES!! ***` line, with pen 0 transparent when the header says so.
 - **OS 3.5 colour icons** ("GlowIcons"): `IMAG` chunks in the `FORM ICON` after the icon, packed or raw, with a packed or raw palette, or reusing the first image's palette, and a transparent pen when flagged.
 - **ARGB images**: zlib `ARGB` chunks written by AROS, MorphOS and OS4 icon tools. The stored packed size is ignored in favour of the zlib stream's own end, because AROS stores the size and the others store it less one.
@@ -234,7 +234,6 @@ A file holds up to eight images: normal and selected images of each kind. `PDTA_
 
 **Not supported:**
 
-- **Planar images of four or more planes.** They were drawn for a screen palette the file doesn't hold. Such an image isn't offered, and an icon with nothing else fails to load; netpbm rejects them too.
 - **PNG icons** (OS4 and MorphOS `.info` files that are PNG files). The stock PNG class opens them, showing the first image.
 - **`png ` chunks inside a `FORM ICON`.** They are skipped.
 

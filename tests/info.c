@@ -83,7 +83,9 @@ static void strings(struct buf *b, const struct icon_spec *s)
     }
 }
 
-/* A planar image from pens, one character '0'-'7' each. */
+/* A planar image from pens, one hex digit each. */
+static unsigned hexdigit(char c) { return c <= '9' ? (unsigned)(c - '0') : (unsigned)(c - 'a' + 10); }
+
 static void planar(struct buf *b, unsigned w, unsigned h, unsigned depth, unsigned pick,
                    unsigned on_off, const char *pens)
 {
@@ -96,7 +98,7 @@ static void planar(struct buf *b, unsigned w, unsigned h, unsigned depth, unsign
         for (y = 0; y < h; y++) {
             uint8_t line[64] = {0};
             for (x = 0; x < w; x++)
-                if ((unsigned)(pens[y * w + x] - '0') & 1u << p)
+                if (hexdigit(pens[y * w + x]) & 1u << p)
                     line[x / 8] |= (uint8_t)(0x80 >> (x & 7));
             bytes(b, line, row);
         }
@@ -369,15 +371,43 @@ static void test_planar(void)
     pixel(&image, 1, 0, 0xff, 0xff, 0xff, 0xff);   /* pen 2 */
     info_free(&image);
 
-    /* Pens above 7 have no colours: such images aren't offered. */
+    /* Deeper images get AROS's default screen of their depth: the first four
+       pens, the last four, the pointer's 17-19 and black elsewhere. */
     b->n = 0;
     diskobject(b, &s);
-    planar(b, 2, 1, 4, 15, 0, "01");
-    assert(info_parse(b->data, b->n, &icon) == CODEC_INVALID);
+    planar(b, 5, 1, 4, 15, 0, "0c5f3");
+    parse_ok(b, &icon, 1);
+    decode_ok(b, &icon, 0, &image, 5, 1);
+    pixel(&image, 0, 0, 0xaa, 0xaa, 0xaa, 0xff);
+    pixel(&image, 1, 0, 0xee, 0x44, 0x44, 0xff);   /* pen 12 */
+    pixel(&image, 2, 0, 0x00, 0x00, 0x00, 0xff);   /* pen 5 */
+    pixel(&image, 3, 0, 0xee, 0x99, 0x00, 0xff);   /* pen 15 */
+    pixel(&image, 4, 0, 0x66, 0x88, 0xbb, 0xff);
+    info_free(&image);
+    /* One plane on bit 0 over PlaneOnOff 0xfc: pens 252 and 253 of 256. */
     b->n = 0;
     diskobject(b, &s);
-    planar(b, 2, 1, 1, 8, 0, "01");
-    assert(info_parse(b->data, b->n, &icon) == CODEC_INVALID);
+    planar(b, 2, 1, 1, 1, 0xfc, "01");
+    parse_ok(b, &icon, 1);
+    decode_ok(b, &icon, 0, &image, 2, 1);
+    pixel(&image, 0, 0, 0xee, 0x44, 0x44, 0xff);
+    pixel(&image, 1, 0, 0x55, 0xdd, 0x55, 0xff);
+    info_free(&image);
+    /* Five planes reach the pointer's pens; nine planes use only eight. */
+    b->n = 0;
+    diskobject(b, &s);
+    planar(b, 1, 1, 1, 1, 0x10, "1");
+    parse_ok(b, &icon, 1);
+    decode_ok(b, &icon, 0, &image, 1, 1);
+    pixel(&image, 0, 0, 0xbb, 0x00, 0x00, 0xff);   /* pen 17 */
+    info_free(&image);
+    b->n = 0;
+    diskobject(b, &s);
+    planar(b, 1, 1, 9, 0xff, 0, "1");
+    parse_ok(b, &icon, 1);
+    decode_ok(b, &icon, 0, &image, 1, 1);
+    pixel(&image, 0, 0, 0x00, 0x00, 0x00, 0xff);
+    info_free(&image);
 
     /* Empty images are skipped. */
     b->n = 0;

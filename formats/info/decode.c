@@ -20,7 +20,8 @@
 static const char newicon_marker[] = "*** DON'T EDIT THE FOLLOWING LINES!! ***";
 
 /* Workbench's pens for planar images, which carry no palette.
-   OS 1.x as netpbm's infotopam shows it; OS 2 and later; MagicWB's eight. */
+   OS 1.x as netpbm's infotopam shows it; OS 2 and later; MagicWB's eight;
+   and the rest of AROS's default screen palette, from Intuition's coltab. */
 static const uint8_t palette_13[4][3] = {
     {0x00, 0x55, 0xaa}, {0xff, 0xff, 0xff}, {0x00, 0x00, 0x20}, {0xff, 0x8a, 0x00}
 };
@@ -30,6 +31,12 @@ static const uint8_t palette_20[4][3] = {
 static const uint8_t palette_mwb[8][3] = {
     {0x95, 0x95, 0x95}, {0x00, 0x00, 0x00}, {0xff, 0xff, 0xff}, {0x3b, 0x67, 0xa2},
     {0x7b, 0x7b, 0x7b}, {0xaf, 0xaf, 0xaf}, {0xaa, 0x90, 0x7c}, {0xff, 0xa9, 0x97}
+};
+static const uint8_t aros_last4[4][3] = {
+    {0xee, 0x44, 0x44}, {0x55, 0xdd, 0x55}, {0x00, 0x44, 0xdd}, {0xee, 0x99, 0x00}
+};
+static const uint8_t aros_pointer[3][3] = {
+    {0xbb, 0x00, 0x00}, {0xdd, 0x00, 0x00}, {0xee, 0x00, 0x00}
 };
 
 static unsigned be16(const uint8_t *p) { return (unsigned)p[0] << 8 | p[1]; }
@@ -112,9 +119,8 @@ static enum codec_result read_planar(struct cursor *c, int selected, unsigned re
     entry.on_off = h[15];
     entry.revision = revision;
     c->at += (size_t)size;
-    /* Workbench has no colours for pens above 7, and empty images show nothing. */
-    if (width > 0 && height > 0 && depth > 0 && depth <= 8 &&
-        planar_pens(entry.depth, entry.pick, entry.on_off) < 8)
+    /* Empty images show nothing. */
+    if (width > 0 && height > 0 && depth > 0)
         add(icon, &entry);
     return CODEC_OK;
 }
@@ -382,19 +388,38 @@ static void put(uint8_t *p, const uint8_t *rgb, uint8_t alpha)
     p[3] = alpha;
 }
 
+/* Images reaching pens 4-7 only were drawn for MagicWB's eight colours.
+   Deeper ones get AROS's default screen of their depth: the first four pens,
+   the last four, the pointer's pens 17-19, and black elsewhere. */
+static void planar_palette(const struct info_entry *e, uint8_t palette[256][3])
+{
+    unsigned pens = planar_pens(e->depth, e->pick, e->on_off), depth = 0;
+
+    memset(palette, 0, 256 * 3);
+    while (pens >> depth)
+        depth++;
+    if (depth == 3) {
+        memcpy(palette, palette_mwb, sizeof palette_mwb);
+        return;
+    }
+    memcpy(palette, e->revision == 0 ? palette_13 : palette_20, sizeof palette_20);
+    if (depth >= 4)
+        memcpy(palette[(1u << depth) - 4], aros_last4, sizeof aros_last4);
+    if (depth >= 5)
+        memcpy(palette[17], aros_pointer, sizeof aros_pointer);
+}
+
 static enum codec_result decode_planar(const uint8_t *data, const struct info_entry *e,
                                        struct info_image *image)
 {
-    const uint8_t (*palette)[3];
+    uint8_t palette[256][3];
     size_t row = (size_t)((e->width + 15) >> 4) * 2u, plane = row * e->height;
     unsigned x, y, bit, p;
     enum codec_result result;
 
     if ((result = alloc_image(image, e->width, e->height)) != CODEC_OK)
         return result;
-    /* Images reaching pens 4-7 were drawn for MagicWB's eight colours. */
-    palette = planar_pens(e->depth, e->pick, e->on_off) > 3 ? palette_mwb :
-              e->revision == 0 ? palette_13 : palette_20;
+    planar_palette(e, palette);
     for (y = 0; y < e->height; y++) {
         for (x = 0; x < e->width; x++) {
             unsigned pen = 0;
