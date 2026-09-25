@@ -221,6 +221,43 @@ Reads X11 cursor files, as shipped in cursor themes on Linux desktops. Each imag
 Saves a one-image cursor with its hotspot at the top left and its larger side as the nominal size. Colours are premultiplied, so semi-transparent pixels lose some precision and fully transparent ones lose their colour. The package includes its `Devs/DataTypes/XCURSOR` descriptor, which matches the `Xcur` magic whatever the file is called, since theme cursors have no extension.
 `formats/xcursor/XCURSOR.dtyp` is the compiled form of `XCURSOR.dtd`; regenerate it with AROS's `createdtdesc -o formats/xcursor/XCURSOR.dtyp formats/xcursor/XCURSOR.dtd` if the recognition rules change.
 
+## Atari Falcon and TT
+
+Reads the Atari Falcon and TT paint formats:
+
+- **True colour (RGB565):** GodPaint `.god`, IndyPaint `.tru`, EggPaint and Spooky Sprites `.trp`, COKE `.tg1`, Rembrandt `.tcp`, and 384×240 Falcon screen dumps `.ftc`.
+- **Prism Paint and TruePaint** `.pnt`/`.tpi`: 1, 2, 4 and 8 bitplanes with a VDI palette, 16-bit and 24-bit, each uncompressed or PackBits-packed.
+- **DuneGraph:** `.dg1`, and `.dc1` with any of its four packing methods.
+- **Fuckpaint** `.pi4`/`.pi7`/`.pi9`: 320×200, 320×240 and 640×480 with 256 colours.
+- **DEGAS files in TT modes:** `.pi4` (320×480, 256 colours), `.pi5` (640×480, 16 colours) and `.pi6` (1280×960, black on white).
+
+The class identifies the format by content, not by name. It checks the ID for the formats that have one. The rest are recognised by exact file size, and for TT DEGAS the resolution word as well.
+
+How colours are scaled:
+
+- RGB565 channels repeat their top bits into the low ones.
+- Falcon palette entries have 6 bits per gun, repeated the same way, so `$FC` is full brightness.
+- TT palette entries have 4 bits per gun.
+- VDI levels (0–1000) are rounded to 8 bits, and values above 1000 are clamped.
+
+Pixels load as stored, without correcting their shape. TT low resolution and ST medium resolution pictures therefore look squeezed, as they do in AROS's DEGAS class.
+
+A Rembrandt file can hold several pictures. `PDTA_WhichPicture` picks one, and `PDTA_GetNumPictures` reports how many there are.
+
+DuneGraph's packer stops once only zeros are left, so `.dc1` data past the stored packed size is zero. A file shorter than its packed size is truncated.
+
+Unsupported:
+
+- Rembrandt's compression flag, which was never implemented.
+- ICE-packed EggPaint files.
+- The `st.pi5` kind of 320×240 ST picture in a DEGAS file.
+- Other Atari 8-bit `.pi9` pictures.
+
+Saves 24-bit uncompressed Prism Paint (`.pnt`), the only lossless RGB variant among these formats, compositing transparency over white.
+
+The package includes its `Devs/DataTypes/FALCON` descriptor. The formats share no magic number, so it matches only the file name (`#?.(god|tru|tg1|tcp|trp|pnt|tpi|dg1|dgu|dc1|pi4|pi5|pi6|pi7|pi9|ftc)`), and the decoder rejects anything else. Its priority is -11, below MacPaint's -10, so MacPaint's mask is checked first on `.pnt` files.
+`formats/falcon/FALCON.dtyp` is the compiled form of `FALCON.dtd`; regenerate it with AROS's `createdtdesc -o formats/falcon/FALCON.dtyp formats/falcon/FALCON.dtd` if the recognition rules change.
+
 ## Build and test
 
 ```sh
