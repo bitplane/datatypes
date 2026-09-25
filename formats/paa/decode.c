@@ -318,11 +318,16 @@ enum codec_result paa_decode(const uint8_t *data, size_t length, unsigned long i
         case LZSS: r = paa_lzss_expand(m.data, m.size, unpacked, size); break;
         default: r = unpack_rle(m.data, m.size, unpacked, size); break;
         }
-        if (r != CODEC_OK) {
+        if (r == CODEC_OK) {
+            in = unpacked;
+        } else if (m.packing == LZSS && h.kind != INDEX && m.size == size) {
+            /* Some third-party writers store these levels raw. */
+            free(unpacked);
+            unpacked = NULL;
+        } else {
             free(unpacked);
             return r;
         }
-        in = unpacked;
     }
     image->rgba = malloc(pixels * 4);
     if (image->rgba == NULL) {

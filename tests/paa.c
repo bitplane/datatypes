@@ -216,8 +216,18 @@ static void test_uncompressed(void)
     pixel(0, 0, 0x55, 0x55, 0x55, 0xAA);
     pixel(0, 1, 0xFF, 0xFF, 0xFF, 0);
 
-    /* These levels are always LZSS; raw pixels don't decode. */
+    /* These levels are LZSS, but some writers store them raw: that is
+       accepted when the size is exactly right. */
     begin(0x8888);
+    mip(1, 1, argb8888, sizeof argb8888);
+    finish();
+    assert(decode(0) == CODEC_OK);
+    pixel(0, 0, 0x30, 0x20, 0x10, 0x40);
+    begin(0x8888);
+    mip(1, 1, argb4444, 3);
+    finish();
+    assert(decode(0) == CODEC_INVALID);
+    begin(0x4444);
     mip(1, 1, argb8888, sizeof argb8888);
     finish();
     assert(decode(0) == CODEC_INVALID);
