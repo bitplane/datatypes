@@ -6,8 +6,8 @@
 
 #define CALS_HEADER_SIZE 2048
 
-/* One byte per pixel: 0 is white, 1 is black. */
-struct fax_image { unsigned width, height; uint8_t *pixels; };
+/* Rows of stride bytes, most significant bit first: a set bit is black. */
+struct fax_image { unsigned width, height; size_t stride; uint8_t *pixels; };
 
 /* A CALS type 1 raster, or else raw Group 3 one-dimensional (MH) fax data. */
 enum codec_result fax_decode(const uint8_t *data, size_t length, struct fax_image *image);
@@ -18,4 +18,9 @@ enum codec_result fax_decode_g4(const uint8_t *data, size_t length,
                                 unsigned width, unsigned height, struct fax_image *image);
 int fax_is_cals(const uint8_t *data, size_t length);
 void fax_free(struct fax_image *image);
+
+static inline int fax_pixel(const struct fax_image *image, unsigned x, unsigned y)
+{
+    return image->pixels[(size_t)y * image->stride + x / 8u] >> (7u - x % 8u) & 1;
+}
 #endif

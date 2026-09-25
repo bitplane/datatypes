@@ -1,6 +1,6 @@
 Name=FAX
 BaseName=fax
-Pattern=#?.(g3|fax|cal|cals|ct1)
+Pattern=#?.(g3|fax|cal|cals|ct1|c4|mil|ras)
 GroupID=pict
 ID=_fax
 Flags=DTF_BINARY
