@@ -1,0 +1,8 @@
+Name=MSX screen
+BaseName=msx
+Pattern=#?.(sc[2-8]|sc[abc]|ge[578]|grp|sr[5-8]|srs|yjk)
+Mask=0xFE 0x00 0x00 ANY ANY 0x00 0x00
+GroupID=pict
+ID=_msx
+Flags=DTF_BINARY,DTF_CASE
+Priority=-9

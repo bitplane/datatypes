@@ -1,0 +1,8 @@
+Name=MSX Graph Saurus
+BaseName=msx
+Pattern=#?.(sc[8c]|ge8|sr[78]|srs|yjk|sri)
+Mask=ANY ANY ANY ANY ANY ANY ANY
+GroupID=pict
+ID=msxr
+Flags=DTF_BINARY
+Priority=-10
