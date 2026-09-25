@@ -1,4 +1,4 @@
-#include "bcn.h"
+#include "common/bcn.h"
 
 /* Integer arithmetic follows the common decoders: 5:6:5 endpoints widened by
    bit replication, and interpolated values rounded down. */

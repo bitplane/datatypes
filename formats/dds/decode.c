@@ -1,7 +1,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "bcn.h"
+#include "common/bcn.h"
+#include "common/bptc.h"
 #include "decode.h"
 
 #define HEADER_SIZE 128u

@@ -1,6 +1,6 @@
 #include <stddef.h>
 
-#include "bcn.h"
+#include "common/bptc.h"
 
 /* BC6H and BC7, from the ARB_texture_compression_bptc specification. */
 

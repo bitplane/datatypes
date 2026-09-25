@@ -17,7 +17,7 @@ Nothing lists the formats. `make test`, `scripts/build.sh`, `scripts/release.sh`
 
 ## Codecs
 
-- C99, `-Wall -Wextra -Werror`, only standard headers plus `common/result.h`, and headers-only helpers from `common/`.
+- C99, `-Wall -Wextra -Werror`, only standard headers plus `common/result.h` and the codec helpers in `common/`.
 - Treat input as hostile: check bounds on every read, cap dimensions and allocations, and return `CODEC_TRUNCATED` or `CODEC_INVALID` instead of guessing.
 - Return `enum codec_result`. `dt_error()` maps it to an AROS error.
 - Test edge cases and malformed input in `tests/<name>.c`, not only the happy path.
@@ -30,13 +30,15 @@ Nothing lists the formats. `make test`, `scripts/build.sh`, `scripts/release.sh`
 | `dtfile.[ch]` | any file-based datatype | `dt_new`, `dt_read_file`, `dt_error`, `dt_set_name`, `dt_write` |
 | `dtpicture.[ch]` | picture datatypes | `dt_put_rgba`, `dt_picture_size`, `dt_each_row` |
 | `zlib.[ch]` | codecs | `zlib_inflate`, `zlib_deflate`, `zlib_deflate_bound`: one-shot zlib streams through `z1.library`, or the system zlib in host tests |
+| `bcn.[ch]` | codecs | `bc1_block` to `bc5_block`: S3TC (DXT1–5) and RGTC block decoders to RGBA |
+| `bptc.[ch]` | codecs | `bc6h_block` (to half floats) and `bc7_block` (to RGBA) |
 
 - It's a library, not a framework. Use what fits and write format-specific code where it doesn't. A streaming or non-picture format shouldn't bend to fit these helpers.
 - `build.sh` links `common/X.c` only when a file in the format includes `"common/X.h"`. It does not follow includes transitively, so include every common header you use directly.
 - Add functions; never change the behaviour or signature of an existing one, because other formats' released binaries depend on it. If something doesn't fit, add a new function next to it.
 - A change to `common/` goes in its own commit, before the format work that needs it. CI builds every format on every push, so breakage shows up there.
 - Only add to `common/` once a second format needs it. The first user keeps it local.
-- Anything that includes AROS headers is `.c` + `.h`. Pure helpers for codecs are `static inline` in a header, so host tests need no extra sources.
+- Anything that includes AROS headers is `.c` + `.h`. Small pure helpers for codecs are `static inline` in a header, so host tests need no extra sources. Larger ones are `.c` + `.h` and go in `HOST_COMMON` in the `Makefile`, which links them into a format's host test the same way `build.sh` does.
 
 ## Class conventions
 
