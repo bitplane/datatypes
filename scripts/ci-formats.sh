@@ -52,6 +52,10 @@ while IFS= read -r -d '' path; do
             all_formats
             exit 0
             ;;
+        tests/*_cases.h)
+            format=${path#tests/}
+            selected+=("${format%_cases.h}")
+            ;;
         tests/*.c)
             format=${path#tests/}
             selected+=("${format%.c}")
