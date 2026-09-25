@@ -76,7 +76,7 @@ struct writer {
     unsigned bytes, flags;
     int pattern;
     UBYTE *band;
-    ULONG *sizes;        /* XCF tile sizes, found on the first pass */
+    uint32_t *sizes;     /* XCF tile sizes, found on the first pass */
     ULONG tile;          /* the next tile's index */
     BOOL measure;
 };
@@ -112,7 +112,7 @@ static BOOL band_row(void *state, const UBYTE *rgba, ULONG width)
         return TRUE;
     length = xcf_encode_tiles(w->band, width, w->rows, w->bytes,
                               w->measure ? NULL : w->out,
-                              w->measure ? (uint32_t *)w->sizes + w->tile : NULL);
+                              w->measure ? w->sizes + w->tile : NULL);
     w->tile += (width + 63u) / 64u;
     w->rows = 0;
     return w->measure || dt_write(w->file, w->out, (LONG)length);
@@ -163,8 +163,7 @@ static BOOL write_xcf(Class *cl, Object *obj, struct writer *w)
     if (header != NULL && w->band != NULL && w->out != NULL && w->sizes != NULL) {
         w->measure = TRUE;
         if (dt_each_row(cl, obj, band_row, w) &&
-            xcf_make_header(w->width, w->height, w->bytes,
-                            (const uint32_t *)w->sizes, header) == size &&
+            xcf_make_header(w->width, w->height, w->bytes, w->sizes, header) == size &&
             dt_write(w->file, header, (LONG)size)) {
             w->measure = FALSE;
             w->y = w->tile = 0;
