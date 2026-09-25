@@ -221,6 +221,11 @@ Reads X11 cursor files, as shipped in cursor themes on Linux desktops. Each imag
 Saves a one-image cursor with its hotspot at the top left and its larger side as the nominal size. Colours are premultiplied, so semi-transparent pixels lose some precision and fully transparent ones lose their colour. The package includes its `Devs/DataTypes/XCURSOR` descriptor, which matches the `Xcur` magic whatever the file is called, since theme cursors have no extension.
 `formats/xcursor/XCURSOR.dtyp` is the compiled form of `XCURSOR.dtd`; regenerate it with AROS's `createdtdesc -o formats/xcursor/XCURSOR.dtyp formats/xcursor/XCURSOR.dtd` if the recognition rules change.
 
+## AVS and AAI
+
+Reads two headerless 32-bit rasters: Stardent AVS X images (big-endian 32-bit width and height, then alpha, red, green and blue bytes) and Dune HD AAI images (the same with little-endian sizes and blue, green, red, alpha pixels). The class tells them apart by content. Sides are at most 65535, so the two byte orders never both give a valid header. Alpha is straight and always kept, with two exceptions. An AVS image whose alpha is zero everywhere loads opaque, because original AVS files such as the format's `mandrill.x` sample leave it zero. In AAI, 254 is opaque, as Dune's tools and ImageMagick write it. A file can hold several images of one kind back to back, as ImageMagick writes them. `PDTA_WhichPicture` picks one and `PDTA_GetNumPictures` reports how many there are. A zero-sized header or fewer than 8 trailing bytes ends the list. Saves one image with its alpha, as AAI if the picture came from a `.aai` file and as AVS otherwise. A fully transparent picture saved as AVS reloads opaque.
+The package includes its `Devs/DataTypes/AVS` descriptor, which covers both formats. Neither has a magic number or a byte both always share, so it matches the file name (`#?.avs`, `#?.x` or `#?.aai`) at priority -10, and the decoder rejects files that are neither. `formats/avs/AVS.dtyp` is the compiled form of `AVS.dtd`; regenerate it with AROS's `createdtdesc -o formats/avs/AVS.dtyp formats/avs/AVS.dtd` if the recognition rules change.
+
 ## Alias/Wavefront RLA and PIX
 
 Reads two run-length encoded formats from 3D renderers and tells them apart by content.
