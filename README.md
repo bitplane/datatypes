@@ -255,6 +255,22 @@ Reads X11 cursor files, as shipped in cursor themes on Linux desktops. Each imag
 Saves a one-image cursor with its hotspot at the top left and its larger side as the nominal size. Colours are premultiplied, so semi-transparent pixels lose some precision and fully transparent ones lose their colour. The package includes its `Devs/DataTypes/XCURSOR` descriptor, which matches the `Xcur` magic whatever the file is called, since theme cursors have no extension.
 `formats/xcursor/XCURSOR.dtyp` is the compiled form of `XCURSOR.dtd`; regenerate it with AROS's `createdtdesc -o formats/xcursor/XCURSOR.dtyp formats/xcursor/XCURSOR.dtd` if the recognition rules change.
 
+## C64 picture
+
+Reads Commodore 64 bitmap pictures from paint programs and the demo scene, in the Pepto palette that RECOIL and VICE use. Multicolour pixels are shown two pixels wide, so pictures are 320×200. FLI pictures are 296×200 without the three character columns lost to the FLI bug, as RECOIL shows them. Interlaced pictures show the average of their two frames, the way they looked on a real screen.
+- Hires: Art Studio and Interpaint hires (`.art` `.aas` `.iph` `.hpi` `.hpc`), Doodle (`.dd` `.ddp`, packed `.jj`), Hires-Editor and Run Paint (`.het` `.rph` `.rpo`), Hi-Eddi and Image System (`.hed` `.ish`), plain hires bitmaps (`.hbm` `.hir`) and AFLI (`.afl`).
+- Multicolour: Koala Painter and its copies (`.koa` `.kla` `.gig` `.ipt` `.rpm` `.fpt`, packed `.gg`), Amica Paint (`.ami`), Advanced Art Studio (`.ocp` `.mpi`), Drazpaint (`.drz` `.drp`, packed or not), Blazing Paddles (`.pi` `.bpl`), Wigmore Artist 64 (`.a64` `.wig`), Rainbow Painter (`.rp`), Dolphin Ed and Vidcom 64 (`.dol` `.vid` `.vic`), Picasso 64 (`.p64`), CDU-Paint (`.cdu`), Cheese (`.che`), Image System (`.ism`), Saracen Paint (`.sar`), Paint Magic (`.pmg`) and uncompressed Micro Illustrator (`.mil`).
+- FLI: FLI Graph and FLI Designer (`.fli` `.fd2`), Blackmail FLI with a background per line (`.bml` `.flg`), FLI Editor (`.fed`) and Flimatic (`.flm`).
+- Interlaced: Drazlace (`.drl` `.dlp`, packed or not, including its one-pixel shift), True Paint (`.mci`), Fuckpaint (`.fp`), Gunpaint (`.gun` `.ifl`), Funpaint (`.fun` `.fp2`, packed or not), Flash FLI (`.ffli` `.ffl`), Hires Interlace (`.hlf` `.hie`), Hireslace (`.hle`), ECI (`.eci`, packed `.ecp`), Interlace Hires Editor (`.ihe`) and Vertical Hires Interlace (`.vhi`).
+
+The files have no magic, so the loader finds the format from the length, the load address in the first two bytes and any signature (Drazpaint, Drazlace, Funpaint, Flash FLI). The extension breaks ties between formats of the same length, such as 32770-byte ECI and Hireslace, or 8002-byte hires bitmaps and Run Paint. Without a deciding extension, the first format that fits the length and load address wins, then the first that fits the length. Packed formats with no signature (`.gg` `.jj` `.ami` `.ecp`) need their extension. A Koala file at `$6000` or `$4400` with up to 64 bytes of junk at the end, which is common in files copied off disk, loads as Koala. RECOIL runs those through its packed-Koala decoder instead and shows noise. RLE runs past the end of the picture are cut short. A packed stream that ends early, or a named file shorter than its format, is truncated.
+
+Not supported: MUFLI and MUIFLI (sprites under an FLI bitmap, documented only by RECOIL's code), Pixel Perfect (`.pp` is PowerPacker's extension on Amiga-family systems), packed Micro Illustrator, True Paint, Blackmail FLI, Flimatic and Hires Manager, Big FLI, Super Hires, NUFLI, UFLI, SHF and other sprite-based modes, character-set and PETSCII screens, sprite and font files, and GoDot. ImageMagick, Pillow and netpbm read none of these formats; RECOIL was the reference throughout.
+
+Saves a 320×200 picture whose pixels, composited over white, are all Pepto colours. A picture made of pixel pairs with at most three colours per 4×8 cell besides one shared background is saved as Koala Painter. Otherwise, one with at most two colours per 8×8 cell is saved as Art Studio hires. Anything else can't be saved without loss and fails with invalid data.
+The package includes its `Devs/DataTypes/C64` descriptor. With no magic to match, it requires two bytes of data and one of the extensions above, at priority -10. To fit `createdtdesc`'s 256-byte line, the pattern leaves out a few rare alternative extensions (`.lre` `.hre` `.cwg` `.fly` `.fgs` `.gih` `.bed` `.mpic` `.gcd` `.mon`), whose formats load under their main extensions. `.art` is also used by Atari ST Art Director.
+`formats/c64/C64.dtyp` is the compiled form of `C64.dtd`; regenerate it with AROS's `createdtdesc -o formats/c64/C64.dtyp formats/c64/C64.dtd` if the recognition rules change.
+
 ## BLP
 
 Reads Blizzard BLP textures from Warcraft III (BLP1) and World of Warcraft (BLP2). Palettized images have 8-bit indices into a 256-colour BGRA palette, and a separate 1, 4 or 8-bit alpha channel when the header declares one. BLP2 files can also be DXT1, DXT3 or DXT5 compressed, or uncompressed BGRA. Alpha counts only when the header's alpha depth is nonzero, and DXT1 blocks are then transparent where the block says so. Two quirks of Pillow's writer are accepted: it declares alpha in palettized files but keeps it in the palette's fourth byte instead of an alpha channel, and in BLP1 files it records the pixel offset 8 bytes too early.
@@ -265,6 +281,7 @@ Not supported: JPEG-compressed BLP1 and BLP2, which is how most Warcraft III tex
 
 Saves BLP2 with one level: palettized when the image has at most 256 distinct colours, uncompressed BGRA otherwise, with an 8-bit alpha channel when any pixel isn't opaque.
 The package includes its `Devs/DataTypes/BLP` descriptor, which matches the `BLP` magic on files named `#?.blp`. `formats/blp/BLP.dtyp` is the compiled form of `BLP.dtd`; regenerate it with AROS's `createdtdesc -o formats/blp/BLP.dtyp formats/blp/BLP.dtd` if the recognition rules change.
+
 ## Amiga icons
 
 Reads Workbench `.info` icons, in every form an icon keeps its images in:
