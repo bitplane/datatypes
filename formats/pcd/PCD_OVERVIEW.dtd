@@ -1,0 +1,8 @@
+Name=Photo CD overview
+BaseName=pcd
+Pattern=#?.pcd
+Mask='P' 'C' 'D' '_' 'O' 'P' 'A'
+GroupID=pict
+ID=pcdo
+Flags=DTF_BINARY,DTF_CASE
+Priority=0
