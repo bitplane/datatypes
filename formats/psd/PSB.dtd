@@ -1,0 +1,8 @@
+Name=Photoshop PSB
+BaseName=psd
+Pattern=#?.psb
+Mask='8' 'B' 'P' 'S' 0x00 0x02
+GroupID=pict
+ID=_psb
+Flags=DTF_BINARY,DTF_CASE
+Priority=0

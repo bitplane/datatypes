@@ -24,6 +24,7 @@ In the Descriptor column, "AROS" means AROS already ships the `Devs/DataTypes` d
 | [FAX](formats/fax/) | `.g3` `.fax` `.cal` `.cals` `.ct1` `.c4` `.mil` `.ras` | Raw Group 3 MH | ours |
 | [FTEX](formats/ftex/) | `.ftc` `.ftu` | Uncompressed 24-bit `.ftu` | ours |
 | [GD and GD2](formats/gd/) | `.gd` `.gd2` | GD 2.x truecolour | ours |
+| [GIMP](formats/gimp/) | `.xcf` `.gbr` `.gih` `.pat` `.gpb` | One-layer XCF, brush, pipe or pattern | ours |
 | [ICNS](formats/icns/) | `.icns` | Square icons, one image | ours |
 | [ICO](formats/ico/) | `.ico` `.cur` | One-image BMP icon or cursor | ours |
 | [Japanese PC pictures](formats/japanpc/) | `.mag` `.max` `.mki` `.pi` `.pic` | MAG | ours |
@@ -34,6 +35,7 @@ In the Descriptor column, "AROS" means AROS already ships the `Devs/DataTypes` d
 | [MacPaint](formats/macpaint/) | `.mac` `.macp` `.pntg` `.pnt` | Version 0 | ours |
 | [MGR](formats/mgr/) | none | 1-bit `yz` bitmap | ours |
 | [MSP](formats/msp/) | `.msp` | Windows 1 | ours |
+| [MSX screens](formats/msx/) | `.sc2` `.sc5` `.sc7` `.sc8` `.sca` `.scc` `.sr7` and more | Screen 5, 7 or 8 | ours |
 | [MTV and QRT](formats/mtv/) | `.mtv` `.pic` `.qrt` `.dis` | One MTV image | ours |
 | [NEOchrome](formats/neo/) | `.neo` | ST screens that fit exactly | ours |
 | [OTB](formats/otb/) | `.otb` | 1-bit, one picture | ours |
@@ -43,9 +45,11 @@ In the Descriptor column, "AROS" means AROS already ships the `Devs/DataTypes` d
 | [PAM and PFM](formats/pam/) | `.pam` `.pfm` `.phm` | 8-bit PAM | ours |
 | [PCX](formats/pcx/) | `.pcx` | 24-bit RGB | AROS |
 | [Photo CD](formats/pcd/) | `.pcd` | Nothing | ours |
+| [Photoshop PSD and PSB](formats/psd/) | `.psd` `.pdd` `.psb` | Nothing | ours |
 | [Pixar](formats/pixar/) | `.pxr` `.pic` `.picio` `.pixar` | 8-bit RGB or RGBA | ours |
 | [PowerVR PVR](formats/pvr/) | `.pvr` | 8-bit RGB or RGBA | ours |
 | [QOI](formats/qoi/) | `.qoi` | RGB or RGBA | ours |
+| [Quake 2 WAL](formats/wal/) | `.wal` | Quake 2 palette colours only, with mips | ours |
 | [Scitex CT](formats/sct/) | `.sct` `.ct` `.ch` | Grayscale or CMY | ours |
 | [SGI](formats/sgi/) | `.rgb` `.rgba` `.bw` `.sgi` `.int` `.inta` | 8-bit RLE gray, RGB or RGBA | ours |
 | [SIXEL](formats/sixel/) | `.six` `.sixel` | RGB, up to 256 colours | ours |

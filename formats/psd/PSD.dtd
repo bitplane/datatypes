@@ -1,0 +1,8 @@
+Name=Photoshop PSD
+BaseName=psd
+Pattern=#?.(psd|pdd)
+Mask='8' 'B' 'P' 'S' 0x00 0x01
+GroupID=pict
+ID=_psd
+Flags=DTF_BINARY,DTF_CASE
+Priority=0
