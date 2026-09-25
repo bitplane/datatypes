@@ -232,6 +232,14 @@ Not supported: JPEG-compressed BLP1 and BLP2, which is how most Warcraft III tex
 Saves BLP2 with one level: palettized when the image has at most 256 distinct colours, uncompressed BGRA otherwise, with an 8-bit alpha channel when any pixel isn't opaque.
 The package includes its `Devs/DataTypes/BLP` descriptor, which matches the `BLP` magic on files named `#?.blp`. `formats/blp/BLP.dtyp` is the compiled form of `BLP.dtd`; regenerate it with AROS's `createdtdesc -o formats/blp/BLP.dtyp formats/blp/BLP.dtd` if the recognition rules change.
 
+## Alias/Wavefront RLA and PIX
+
+Reads two run-length encoded formats from 3D renderers and tells them apart by content.
+Wavefront RLA files have gray or RGB colour channels of 1 to 16 bits. Deeper channels are rounded to 8 bits, and old files that leave the bit count at 0 load as 8-bit. The first matte channel becomes alpha. Colour is stored multiplied by the matte, as renderers write it and OpenImageIO reads it, so it is converted to straight alpha. ImageMagick shows the stored values unconverted. Further matte channels, auxiliary channels (Z buffer and 3ds Max G-buffer data) and the image's position in its full window are ignored. Revisions `0xFFFE`, `0xFFFD` and 0 load. An RLA file can chain several images through its headers. `PDTA_WhichPicture` picks one in file order, the first by default, and `PDTA_GetNumPictures` returns the count. Float and 32-bit channels are rejected, as are the older RLB layout and 3ds Max RPF files.
+Alias PIX files hold 24-bit colour or an 8-bit gray matte, which loads as a gray image. Runs may carry on into the next row, as ImageMagick reads them. The header's offset fields are ignored.
+Saves an 8-bit RGB RLA file. When the picture has transparency it adds a matte channel and multiplies the colour by it, so colour under partial or zero alpha loses precision. PIX isn't saved because it can't hold alpha. The package includes its `Devs/DataTypes/Alias` descriptor. PIX has no magic number, so the descriptor matches the file name (`#?.rla`, `#?.pix`, `#?.als` or `#?.alias`) at priority -10, and the decoder rejects files that are neither format. Packages ship one descriptor, which rules out a separate content match on the RLA revision field.
+`formats/alias/ALIAS.dtyp` is the compiled form of `ALIAS.dtd`; regenerate it with AROS's `createdtdesc -o formats/alias/ALIAS.dtyp formats/alias/ALIAS.dtd` if the recognition rules change.
+
 ## Build and test
 
 ```sh
