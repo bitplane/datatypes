@@ -1,5 +1,5 @@
-#ifndef BITPLANE_ICO_DECODE_H
-#define BITPLANE_ICO_DECODE_H
+#ifndef BITPLANE_COMMON_ICO_H
+#define BITPLANE_COMMON_ICO_H
 #include <stddef.h>
 #include <stdint.h>
 #include "common/result.h"

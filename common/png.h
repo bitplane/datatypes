@@ -1,10 +1,11 @@
-#ifndef BITPLANE_ICNS_PNG_H
-#define BITPLANE_ICNS_PNG_H
+#ifndef BITPLANE_COMMON_PNG_H
+#define BITPLANE_COMMON_PNG_H
 #include <stddef.h>
 #include <stdint.h>
 #include "common/result.h"
 
-/* PNG inside ICNS entries. Kept local until a second format needs it. */
+/* PNG decoding and encoding for codecs. png.c needs zlib.c, so users include
+   common/zlib.h too: build.sh links only the modules a format includes. */
 
 #define PNG_MAX_PIXELS (16u * 1024u * 1024u)
 #define PNG_MAX_SIDE 65535u

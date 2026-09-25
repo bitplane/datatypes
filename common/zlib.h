@@ -18,6 +18,12 @@ enum codec_result zlib_inflate(const unsigned char *src, size_t src_length,
                                unsigned char *dst, size_t dst_length,
                                size_t *written);
 
+/* Inflate raw deflate data (RFC 1951), as zip members hold. Results as
+   zlib_inflate, without a checksum to check. */
+enum codec_result zlib_inflate_raw(const unsigned char *src, size_t src_length,
+                                   unsigned char *dst, size_t dst_length,
+                                   size_t *written);
+
 /* Deflate src into dst at level 0-9, or -1 for zlib's default.
    Returns CODEC_TOO_LARGE if dst is too small; zlib_deflate_bound is enough. */
 enum codec_result zlib_deflate(const unsigned char *src, size_t src_length,

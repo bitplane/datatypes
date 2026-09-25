@@ -8,6 +8,7 @@ In the Descriptor column, "AROS" means AROS already ships the `Devs/DataTypes` d
 |---|---|---|---|
 | [Alias/Wavefront RLA and PIX](formats/alias/) | `.rla` `.pix` `.als` `.alias` | 8-bit RLA | ours |
 | [Amiga icons](formats/info/) | `.info` | Project icon | ours |
+| [ANI](formats/ani/) | `.ani` | One-frame cursor | ours |
 | [Atari Falcon and TT](formats/falcon/) | `.god` `.tru` `.trp` `.tcp` `.pnt` `.tpi` `.dc1` `.pi4` and more | 24-bit Prism Paint | ours |
 | [Atari ST compressed paint](formats/stpaint/) | `.tny` `.ca1` `.ic1` `.pac` `.lpk` `.ppp` `.cp3` `.psc` and more | Tiny | ours |
 | [Atari ST multi-palette](formats/stmulti/) | `.mpp` `.pcs` | Nothing | ours |
@@ -38,6 +39,7 @@ In the Descriptor column, "AROS" means AROS already ships the `Devs/DataTypes` d
 | [MSX screens](formats/msx/) | `.sc2` `.sc5` `.sc7` `.sc8` `.sca` `.scc` `.sr7` and more | Screen 5, 7 or 8 | ours |
 | [MTV and QRT](formats/mtv/) | `.mtv` `.pic` `.qrt` `.dis` | One MTV image | ours |
 | [NEOchrome](formats/neo/) | `.neo` | ST screens that fit exactly | ours |
+| [OpenRaster and Krita](formats/ora/) | `.ora` `.kra` | One-layer OpenRaster | ours |
 | [OTB](formats/otb/) | `.otb` | 1-bit, one picture | ours |
 | [PAA](formats/paa/) | `.paa` `.pac` | ARGB8888 | ours |
 | [Paint Shop Pro](formats/psp/) | `.psp` `.pspimage` `.tub` `.psptube` and more | One 24-bit layer | ours |

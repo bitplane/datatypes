@@ -29,9 +29,13 @@ Nothing lists the formats. `make test`, `scripts/build.sh`, `scripts/release.sh`
 | `result.h` | codecs | `enum codec_result` |
 | `dtfile.[ch]` | any file-based datatype | `dt_new`, `dt_read_file`, `dt_error`, `dt_set_name`, `dt_write` |
 | `dtpicture.[ch]` | picture datatypes | `dt_put_rgba`, `dt_picture_size`, `dt_each_row` |
-| `zlib.[ch]` | codecs | `zlib_inflate`, `zlib_deflate`, `zlib_deflate_bound`: one-shot zlib streams through `z1.library`, or the system zlib in host tests |
+| `dtembed.[ch]` | datatypes with embedded pictures | `dt_load_embedded`: decode embedded data (a PNG icon entry) through a `T:` file and the matching datatype |
+| `zlib.[ch]` | codecs | `zlib_inflate`, `zlib_inflate_raw`, `zlib_deflate`, `zlib_deflate_bound`: one-shot zlib and raw deflate streams through `z1.library`, or the system zlib in host tests |
+| `png.[ch]` | codecs | `png_decode` (every PNG colour type and depth, Adam7) to RGBA, `png_encode` (8-bit RGB or RGBA), `png_info`, `png_signature`; include `common/zlib.h` alongside |
 | `bcn.[ch]` | codecs | `bc1_block` to `bc5_block`: S3TC (DXT1–5) and RGTC block decoders to RGBA |
 | `bptc.[ch]` | codecs | `bc6h_block` (to half floats) and `bc7_block` (to RGBA) |
+| `ico.[ch]` | codecs | `ico_directory`, `ico_entry`, `ico_best`, `ico_decode_bmp`: Windows ICO and CUR files, with PNG entries left to the caller |
+| `icoenc.[ch]` | codecs | `ico_encode`: a one-entry 24- or 32-bit BMP icon or cursor |
 | `atarist.h` | codecs | `st_level`, `st_nibble`, `st_palette`, `st_is_ste`: ST and STE palette words; `st_pixel`: interleaved bitplane screens |
 
 - It's a library, not a framework. Use what fits and write format-specific code where it doesn't. A streaming or non-picture format shouldn't bend to fit these helpers.

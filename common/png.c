@@ -2,7 +2,7 @@
 #include <string.h>
 
 #include "common/zlib.h"
-#include "png.h"
+#include "common/png.h"
 
 static const uint8_t signature[8] = {137, 80, 78, 71, 13, 10, 26, 10};
 
