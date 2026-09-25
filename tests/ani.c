@@ -1,5 +1,6 @@
 #include "../formats/ani/decode.h"
 #include "../formats/ani/encode.h"
+#include "../common/icoenc.h"
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>

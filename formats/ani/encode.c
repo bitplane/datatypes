@@ -1,5 +1,5 @@
 #include "encode.h"
-#include "common/ico.h"
+#include "common/icoenc.h"
 #include <string.h>
 
 /* RIFF header, anih chunk, then LIST fram and the icon chunk's header. */
