@@ -88,6 +88,7 @@ IPTR XCURSOR__DTM_WRITE(Class *cl, Object *obj, struct dtWrite *msg)
     if (msg->dtw_FileHandle == BNULL)
         return TRUE;
     if (!dt_picture_size(obj, &width, &height) ||
+        (uint64_t)width * height > 16u * 1024u * 1024u ||
         !xcursor_make_header(width, height, header))
         return FALSE;
     w.file = msg->dtw_FileHandle;
