@@ -1,4 +1,5 @@
 #include "decode.h"
+#include "common/atarist.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -14,14 +15,6 @@ static uint32_t be32(const uint8_t *p)
 {
     return ((uint32_t)p[0] << 24) | ((uint32_t)p[1] << 16) |
            ((uint32_t)p[2] << 8) | p[3];
-}
-
-uint8_t spectrum_level(unsigned nibble, int ste)
-{
-    if (ste)
-        return (uint8_t)((((nibble & 7u) << 1) | ((nibble >> 3) & 1u)) * 17u);
-    /* round(v * 255 / 7), as netpbm scales maxval 7. */
-    return (uint8_t)(((nibble & 7u) * 255u + 3u) / 7u);
 }
 
 unsigned spectrum_slot(unsigned c, unsigned x)
@@ -156,9 +149,9 @@ static void render(const uint8_t *screen, const unsigned *words, uint8_t *rgba)
             for (p = 0; p < 4; p++)
                 c |= ((be16(group + p * 2u) >> bit) & 1u) << p;
             word = palette[spectrum_slot(c, x)];
-            dst[0] = spectrum_level(word >> 8, ste);
-            dst[1] = spectrum_level(word >> 4, ste);
-            dst[2] = spectrum_level(word, ste);
+            dst[0] = st_level(word >> 8, ste);
+            dst[1] = st_level(word >> 4, ste);
+            dst[2] = st_level(word, ste);
             dst[3] = 255;
             dst += 4;
         }

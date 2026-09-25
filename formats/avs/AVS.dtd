@@ -1,0 +1,7 @@
+Name=AVS
+BaseName=avs
+Pattern=#?.(avs|x|aai)
+GroupID=pict
+ID=_avs
+Flags=DTF_BINARY
+Priority=-10
