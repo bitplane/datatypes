@@ -1,0 +1,8 @@
+Name=VIFF
+BaseName=viff
+Pattern=#?.(viff|xv)
+Mask=0xab 0x01
+GroupID=pict
+ID=viff
+Flags=DTF_BINARY,DTF_CASE
+Priority=0
