@@ -383,6 +383,33 @@ Alias PIX files hold 24-bit colour or an 8-bit gray matte, which loads as a gray
 Saves an 8-bit RGB RLA file. When the picture has transparency it adds a matte channel and multiplies the colour by it, so colour under partial or zero alpha loses precision. PIX isn't saved because it can't hold alpha. The package includes its `Devs/DataTypes/Alias` descriptor. PIX has no magic number, so the descriptor matches the file name (`#?.rla`, `#?.pix`, `#?.als` or `#?.alias`) at priority -10, and the decoder rejects files that are neither format. Packages ship one descriptor, which rules out a separate content match on the RLA revision field.
 `formats/alias/ALIAS.dtyp` is the compiled form of `ALIAS.dtd`; regenerate it with AROS's `createdtdesc -o formats/alias/ALIAS.dtyp formats/alias/ALIAS.dtd` if the recognition rules change.
 
+## Atari ST compressed paint
+
+Reads the compressed pictures of eight Atari ST paint programs:
+
+- Tiny (`.tny`, `.tn1`–`.tn6`), including the colour-cycling modes 3–5, whose cycling data is ignored
+- CrackArt (`.ca1`–`.ca3`), compressed or not
+- Imagic (`.ic1`–`.ic3`)
+- STAD (`.pac`), packed across or down
+- compressed Dali (`.lpk`, `.mpk`, `.hpk`)
+- Pablo Paint (`.ppp`, `.pa3`)
+- Picworks (`.cp3`)
+- PaintShop (`.psc`), which alone keeps its own size of up to 640×400
+
+The others give a 320×200 16-colour, 640×200 4-colour or 640×400 black-on-white screen, as `neo` does. The ST and STE palette rules are also `neo`'s. Imagic's film deltas load with zeros where the base picture would show.
+
+Some writers stop a STAD file one byte short of the screen. That last byte is left white rather than rejecting the file. Tiny files with more than 512 bytes after their data are rejected. Programs on other systems also use the `.tn4` name, and RECOIL shows those files as stripes.
+
+Unsupported:
+
+- Pablo's compressed variant (type 29), which is undocumented, with no known samples
+- uncompressed Imagic pictures, of which none are known
+
+Uncompressed Dali (`.sd0`–`.sd2`) and Paintworks belong to the ST screen class.
+
+Saves Tiny for the three screen sizes, with the same colour rules as NEOchrome. The package includes two descriptors. `STPAINT` matches the other extensions by name at priority -10, while `STPAINT_PAC` matches `.pac` files beginning with `pM8` at priority -9. This lets Bohemia PAA `.pac` files reach the PAA descriptor. The decoder recognises Imagic (`IMDC`), STAD (`pM85`/`pM86`), PaintShop (`tm89`), Pablo and CrackArt by their signatures, and the rest by extension. Dali stores its resolution only in the extension.
+`formats/stpaint/STPAINT.dtyp` and `STPAINT_PAC.dtyp` are compiled from their matching `.dtd` files with AROS's `createdtdesc`.
+
 ## Build and test
 
 ```sh
