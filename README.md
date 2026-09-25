@@ -24,6 +24,7 @@ In the Descriptor column, "AROS" means AROS already ships the `Devs/DataTypes` d
 | [FAX](formats/fax/) | `.g3` `.fax` `.cal` `.cals` `.ct1` `.c4` `.mil` `.ras` | Raw Group 3 MH | ours |
 | [FTEX](formats/ftex/) | `.ftc` `.ftu` | Uncompressed 24-bit `.ftu` | ours |
 | [GD and GD2](formats/gd/) | `.gd` `.gd2` | GD 2.x truecolour | ours |
+| [GIMP](formats/gimp/) | `.xcf` `.gbr` `.gih` `.pat` `.gpb` | One-layer XCF, brush, pipe or pattern | ours |
 | [ICNS](formats/icns/) | `.icns` | Square icons, one image | ours |
 | [ICO](formats/ico/) | `.ico` `.cur` | One-image BMP icon or cursor | ours |
 | [Japanese PC pictures](formats/japanpc/) | `.mag` `.max` `.mki` `.pi` `.pic` | MAG | ours |
