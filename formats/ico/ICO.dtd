@@ -1,0 +1,8 @@
+Name=ICO
+BaseName=ico
+Pattern=#?.(ico|cur)
+Mask=0x00 0x00 ANY 0x00
+GroupID=pict
+ID=_ico
+Flags=DTF_BINARY,DTF_CASE
+Priority=-10

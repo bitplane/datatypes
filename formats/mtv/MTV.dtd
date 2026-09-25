@@ -1,0 +1,7 @@
+Name=MTV
+BaseName=mtv
+Pattern=#?.(mtv|pic|qrt|dis)
+GroupID=pict
+ID=_mtv
+Flags=DTF_BINARY
+Priority=-10
