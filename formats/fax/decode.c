@@ -3,7 +3,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define FAX_MAX_PIXELS (16u * 1024u * 1024u)
+/* Four times the usual limit: CALS drawings run to E size at 200 dpi (8800 x
+   6800), and one bit per pixel keeps even that at 8MB. */
+#define FAX_MAX_PIXELS (64u * 1024u * 1024u)
 #define FAX_MAX_SIDE 65535u
 #define EOL_ZEROS 11u  /* an EOL is at least 11 zero bits and a one */
 #define RTC_EOLS 6u
@@ -115,13 +117,26 @@ static enum run_result read_run(struct bits *b, const struct fax_lookup *lookup,
     return RUN_OK;
 }
 
+/* Set the bits for pixels from to to, not including to. */
 static void paint(uint8_t *row, unsigned width, unsigned from, unsigned to)
 {
+    unsigned first, last;
+
     if (row == NULL || from >= width)
         return;
     if (to > width)
         to = width;
-    memset(row + from, 1, to - from);
+    if (from >= to)
+        return;
+    first = from / 8u;
+    last = (to - 1u) / 8u;
+    if (first == last) {
+        row[first] |= (uint8_t)((0xffu >> from % 8u) & (0xffu << (7u - (to - 1u) % 8u)));
+        return;
+    }
+    row[first] |= (uint8_t)(0xffu >> from % 8u);
+    memset(row + first + 1u, 0xff, last - first - 1u);
+    row[last] |= (uint8_t)(0xffu << (7u - (to - 1u) % 8u));
 }
 
 static struct fax_lookup *make_lookups(void)
@@ -141,7 +156,8 @@ static enum codec_result allocate(struct fax_image *image, unsigned width, unsig
     if (width > FAX_MAX_SIDE || height > FAX_MAX_SIDE ||
         (size_t)width * height > FAX_MAX_PIXELS)
         return CODEC_TOO_LARGE;
-    image->pixels = calloc((size_t)width * height, 1);
+    image->stride = (width + 7u) / 8u;
+    image->pixels = calloc(image->stride * height, 1);
     if (image->pixels == NULL)
         return CODEC_NO_MEMORY;
     image->width = width;
@@ -154,6 +170,7 @@ void fax_free(struct fax_image *image)
     free(image->pixels);
     image->pixels = NULL;
     image->width = image->height = 0;
+    image->stride = 0;
 }
 
 /* ---- Group 3, one-dimensional ---- */
@@ -238,7 +255,7 @@ static void g3_page(const uint8_t *data, size_t length, int reversed,
         }
         y += eols - 1u;
         result = g3_line(&b, lookups,
-                         image != NULL ? image->pixels + (size_t)y * image->width : NULL,
+                         image != NULL ? image->pixels + (size_t)y * image->stride : NULL,
                          image != NULL ? image->width : 0, &line);
         y++;
         if (line > page->width) {
@@ -288,6 +305,7 @@ enum codec_result fax_decode_g3(const uint8_t *data, size_t length, struct fax_i
     if (image == NULL)
         return CODEC_INVALID;
     image->width = image->height = 0;
+    image->stride = 0;
     image->pixels = NULL;
     if (data == NULL || length == 0)
         return CODEC_TRUNCATED;
@@ -419,6 +437,7 @@ enum codec_result fax_decode_g4(const uint8_t *data, size_t length,
     if (image == NULL)
         return CODEC_INVALID;
     image->width = image->height = 0;
+    image->stride = 0;
     image->pixels = NULL;
     if (data == NULL && length != 0)
         return CODEC_INVALID;
@@ -439,7 +458,7 @@ enum codec_result fax_decode_g4(const uint8_t *data, size_t length,
     b.reversed = 0;
     for (y = 0; y < height; y++) {
         result = g4_line(&b, lookups, ref, cur, &count, width,
-                         image->pixels + (size_t)y * width);
+                         image->pixels + (size_t)y * image->stride);
         if (result != CODEC_OK)
             break;
         swap = ref; ref = cur; cur = swap;
@@ -501,15 +520,26 @@ static int numbers(const uint8_t *record, size_t from, unsigned long *values, un
     return 1;
 }
 
+/* The records of a MIL-PRF-28002 header, in their usual order. */
+static const char *const cals_keywords[] = {
+    "srcdocid:", "dstdocid:", "txtfilid:", "figid:", "srcgph:", "doccls:",
+    "rtype:", "rorient:", "rpelcnt:", "rdensty:", "notes:", "version: mil-std-1840",
+};
+
 int fax_is_cals(const uint8_t *data, size_t length)
 {
-    return data != NULL && length >= CALS_RECORD &&
-           (keyword(data, "srcdocid:") || keyword(data, "rorient:") ||
-            keyword(data, "version: mil-std-1840"));
+    size_t i;
+
+    if (data == NULL || length < CALS_RECORD)
+        return 0;
+    /* Raw Group 3 starts with fill bits or an EOL, never text. */
+    for (i = 0; i < sizeof cals_keywords / sizeof cals_keywords[0]; i++)
+        if (keyword(data, cals_keywords[i]))
+            return 1;
+    return 0;
 }
 
-/* Screen direction of a CALS angle, counter-clockwise from the pel path of
-   an upright page. */
+/* Screen direction of a CALS angle, counter-clockwise from rightwards. */
 static int direction(unsigned long angle, int *dx, int *dy)
 {
     switch (angle) {
@@ -521,35 +551,47 @@ static int direction(unsigned long angle, int *dx, int *dy)
     }
 }
 
-/* Lay the stored pels along the pel path and the lines along the line progression. */
+/* Lay the stored pels along the pel path and the lines along the line
+   progression, which is measured counter-clockwise from the pel path. */
 static enum codec_result orient(struct fax_image *image, unsigned long pel_path,
                                 unsigned long progression)
 {
     int px, py, lx, ly;
-    unsigned x, y, width = image->width, height = image->height, out_width;
-    size_t ox, oy;
+    unsigned x, y, width = image->width, height = image->height, out_width, out_height;
+    size_t ox, oy, out_stride;
     uint8_t *out;
 
-    if (!direction(pel_path, &px, &py) || !direction(progression, &lx, &ly) ||
-        px * lx + py * ly != 0 || (px == 1 && ly == 1))
+    if ((progression != 90 && progression != 270) || !direction(pel_path, &px, &py) ||
+        !direction((pel_path + progression) % 360u, &lx, &ly) || (px == 1 && ly == 1))
         return CODEC_OK;
-    out = malloc((size_t)width * height);
+    out_width = px != 0 ? width : height;
+    out_height = px != 0 ? height : width;
+    out_stride = (out_width + 7u) / 8u;
+    out = calloc(out_stride * out_height, 1);
     if (out == NULL)
         return CODEC_NO_MEMORY;
-    out_width = px != 0 ? width : height;
     ox = (px < 0 ? width - 1u : 0) + (lx < 0 ? height - 1u : 0);
     oy = (py < 0 ? width - 1u : 0) + (ly < 0 ? height - 1u : 0);
     for (y = 0; y < height; y++) {
+        const uint8_t *row = image->pixels + (size_t)y * image->stride;
         for (x = 0; x < width; x++) {
-            size_t tx = ox + (size_t)((long)x * px + (long)y * lx);
-            size_t ty = oy + (size_t)((long)x * py + (long)y * ly);
-            out[ty * out_width + tx] = image->pixels[(size_t)y * width + x];
+            size_t tx, ty;
+            if (row[x / 8u] == 0) {
+                x |= 7u;
+                continue;
+            }
+            if (!(row[x / 8u] >> (7u - x % 8u) & 1u))
+                continue;
+            tx = ox + (size_t)((long)x * px + (long)y * lx);
+            ty = oy + (size_t)((long)x * py + (long)y * ly);
+            out[ty * out_stride + tx / 8u] |= (uint8_t)(0x80u >> tx % 8u);
         }
     }
     free(image->pixels);
     image->pixels = out;
     image->width = out_width;
-    image->height = (unsigned)((size_t)width * height / out_width);
+    image->height = out_height;
+    image->stride = out_stride;
     return CODEC_OK;
 }
 
@@ -600,6 +642,7 @@ enum codec_result fax_decode(const uint8_t *data, size_t length, struct fax_imag
     if (image == NULL)
         return CODEC_INVALID;
     image->width = image->height = 0;
+    image->stride = 0;
     image->pixels = NULL;
     if (fax_is_cals(data, length))
         return decode_cals(data, length, image);

@@ -15,6 +15,7 @@
 #include "encode.h"
 
 #define MAX_FAX_FILE (32L * 1024L * 1024L)
+#define BAND_BYTES 65536UL
 
 ADD2LIBS((const UBYTE *)"datatypes/picture.datatype", 0, struct Library *, PictureBase);
 
@@ -24,6 +25,35 @@ struct writer {
     UBYTE *out;
     size_t capacity;
 };
+
+/* Pass the packed pixels on as pens, a band of rows at a time, so a large
+   drawing needs no second whole-page copy here. */
+static LONG put_pixels(Class *cl, Object *obj, const struct fax_image *image)
+{
+    ULONG band = BAND_BYTES / image->width, y, rows, x, r;
+    UBYTE *pens;
+    LONG error = 0;
+
+    if (band == 0)
+        band = 1;
+    if (band > image->height)
+        band = image->height;
+    pens = AllocVec(band * image->width, MEMF_ANY);
+    if (pens == NULL)
+        return ERROR_NO_FREE_STORE;
+    for (y = 0; y < image->height && error == 0; y += rows) {
+        rows = image->height - y < band ? image->height - y : band;
+        for (r = 0; r < rows; r++)
+            for (x = 0; x < image->width; x++)
+                pens[r * image->width + x] = (UBYTE)fax_pixel(image, x, y + r);
+        if (!DoSuperMethod(cl, obj, PDTM_WRITEPIXELARRAY,
+                           pens, PBPAFMT_LUT8, image->width,
+                           0, y, image->width, rows))
+            error = DTERROR_INVALID_DATA;
+    }
+    FreeVec(pens);
+    return error;
+}
 
 /* Make obj a one-plane picture: pen 0 is the white paper, pen 1 black. */
 static LONG put_bitmap(Class *cl, Object *obj, const struct fax_image *image)
@@ -54,11 +84,7 @@ static LONG put_bitmap(Class *cl, Object *obj, const struct fax_image *image)
                DTA_NominalVert, image->height,
                PDTA_SourceMode, PMODE_V43,
                TAG_END);
-    if (!DoSuperMethod(cl, obj, PDTM_WRITEPIXELARRAY,
-                       image->pixels, PBPAFMT_LUT8, image->width,
-                       0, 0, image->width, image->height))
-        return DTERROR_INVALID_DATA;
-    return 0;
+    return put_pixels(cl, obj, image);
 }
 
 static LONG load_fax(Class *cl, Object *obj)
