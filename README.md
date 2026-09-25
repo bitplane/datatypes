@@ -177,9 +177,27 @@ Saves one image with no background: gray when every pixel is gray and opaque, RG
 
 ## ZX Spectrum screen
 
-Reads ZX Spectrum `SCREEN$` dumps: exactly 6912 bytes, the 6144-byte bitmap in the Spectrum's interleaved row order followed by 768 attribute bytes, one per 8×8 cell. They load as 256×192 pictures without the border. Colours use ImageMagick's levels, 0xC0 for normal and 0xFF for bright. Flashing cells show their first phase, ink on paper. Files shorter than 6912 bytes are truncated. Longer ones are other screen formats and are rejected. ImageMagick shows the first 6912 bytes of those, which gives the wrong picture. Not supported: ULA+ palettes (6976 bytes), Timex hi-colour and hi-res screens (12288 and 12289 bytes), two-screen Gigascreen or multicolour files, bitmap-only 6144-byte files and `+3DOS` headers.
-Saves a screen when the picture is 256×192 and, after compositing over white, uses only Spectrum colours with at most two per cell, both normal or both bright (black goes with either). Other pictures can't be saved, because the format can't hold them without loss. In a cell with two colours, the one with the lower colour number is paper.
-The package includes its `Devs/DataTypes/ZXSCR` descriptor. Screens have no magic number and any 6912 bytes are a valid screen, so the descriptor only requires 32 bytes of data and a `.scr` name, at priority -10. Windows screen savers also use `.scr`. The descriptor claims them too, but the loader rejects them because of their size.
+Reads ZX Spectrum screens and the extended screen formats built on them. The file size tells most of them apart; SXG and MultiArtist files have magic numbers.
+
+| Format | Size in bytes | Picture |
+|---|---|---|
+| `SCREEN$` (`.scr`) | 6912, or 6913 with a border colour, which isn't shown | 256×192, attributes per 8×8 cell |
+| Bitmap only (`.scr`) | 6144 | 256×192, black ink on white paper, as after `CLS` |
+| ULAplus (`.scr`) | 6976 | 256×192 with a 64-colour palette |
+| Timex hi-colour (`.scr`) | 12288 | 256×192, attributes per 8×1 span |
+| Timex hi-colour with ULAplus palette (`.scr`) | 12352 | as above, 64 colours |
+| Timex hi-res (`.scr`) | 12289 | 512×192 in two colours, rows doubled to 512×384 |
+| Multicolour 8×1 (`.mc` linear bitmap, `.mlt`) | 12288 | 256×192 |
+| IFL multicolour 8×2 (`.ifl`) | 9216 | 256×192 |
+| Border screen (`.bsc`), with 8×4 multicolour (`.bmc4`) | 11136, 11904 | 384×304 including the border |
+| Gigascreen (`.img`) | 13824 | 256×192, the average of two screens |
+| Hi-res Gigascreen (`.hrg`) | 24578 | 512×384, the average of two hi-res screens |
+| MultiArtist Gigascreen (`.mg1`, `.mg2`, `.mg4`, `.mg8`) | `MGH` header | 256×192, the average of two multicolour screens |
+| Speccy eXtended Graphics (`.sxg`) | `\x7FSXG` header | any size up to 16M pixels, 16 or 256 colours |
+
+A 12288-byte file is Timex hi-colour unless its name ends in `.mc` or `.mlt`. Colours use ImageMagick's levels, 0xC0 for normal and 0xFF for bright. Flashing cells show their first phase, ink on paper. ULAplus palettes follow the ULAplus specification: 3-bit levels, with blue's missing low bit set to the OR of its two stored bits. Border colours are never bright. Timex hi-res uses the bright ink selected by bits 3–5 of the last byte, and the complementary paper. Files shorter than 6912 bytes (other than 6144) are truncated, and other sizes are rejected. Not supported: packed SXG files, three-screen `.3` and `.rgb` tricolour files, `+3DOS` headers, attribute-only `.atr` files, and the other RECOIL ZX formats (`.bsp`, `.chx`, `.zxp`, `.sev` and so on).
+Saves a standard 6912-byte screen when the picture is 256×192 and, after compositing over white, uses only Spectrum colours with at most two per 8×8 cell, both normal or both bright (black goes with either). Otherwise it saves a 12288-byte Timex hi-colour screen if each 8×1 span meets the same rule. Other pictures can't be saved, because neither layout can hold them without loss. In a cell or span with two colours, the one with the lower colour number is paper.
+The package includes its `Devs/DataTypes/ZXSCR` descriptor. Most of these formats have no magic, so the descriptor only requires 16 bytes of data and one of the file name patterns above, at priority -11. That is one below the stock GEM IMG descriptor, so GEM `.img` files still go to the stock class. A Gigascreen `.img` whose bytes 0, 2, 4 and 6 are zero matches GEM's mask first and won't open. Windows screen savers also use `.scr`. The descriptor claims them too, but the loader rejects them because of their size.
 `formats/zxscr/ZXSCR.dtyp` is the compiled form of `ZXSCR.dtd`; regenerate it with AROS's `createdtdesc -o formats/zxscr/ZXSCR.dtyp formats/zxscr/ZXSCR.dtd` if the recognition rules change.
 
 ## CompuServe RLE
