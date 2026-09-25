@@ -1,0 +1,8 @@
+Name=OpenRaster
+BaseName=ora
+Pattern=#?.ora
+Mask=0x50 0x4b 0x03 0x04 ANYANYANYANYANYANYANYANYANYANYANYANYANYANYANYANYANYANYANYANYANYANYANYANYANYANY'm''i''m''e''t''y''p''e'
+GroupID=pict
+ID=_ora
+Flags=DTF_BINARY,DTF_CASE
+Priority=2
