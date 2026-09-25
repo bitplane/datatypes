@@ -1,0 +1,8 @@
+Name=PVR
+BaseName=pvr
+Pattern=#?.pvr
+Mask='P' 'V' 'R' 0x03
+GroupID=pict
+ID=pvr3
+Flags=DTF_BINARY,DTF_CASE
+Priority=0

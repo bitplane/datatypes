@@ -38,6 +38,7 @@ In the Descriptor column, "AROS" means AROS already ships the `Devs/DataTypes` d
 | [PAM and PFM](formats/pam/) | `.pam` `.pfm` `.phm` | 8-bit PAM | ours |
 | [PCX](formats/pcx/) | `.pcx` | 24-bit RGB | AROS |
 | [Pixar](formats/pixar/) | `.pxr` `.pic` `.picio` `.pixar` | 8-bit RGB or RGBA | ours |
+| [PowerVR PVR](formats/pvr/) | `.pvr` | 8-bit RGB or RGBA | ours |
 | [QOI](formats/qoi/) | `.qoi` | RGB or RGBA | ours |
 | [SGI](formats/sgi/) | `.rgb` `.rgba` `.bw` `.sgi` `.int` `.inta` | 8-bit RLE gray, RGB or RGBA | ours |
 | [SIXEL](formats/sixel/) | `.six` `.sixel` | RGB, up to 256 colours | ours |
