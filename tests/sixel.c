@@ -410,6 +410,7 @@ static void test_encoder(void)
 
     assert(sixel_encoder_init(&e, 0, 1) == CODEC_INVALID);
     assert(sixel_encoder_init(&e, 1, 65536) == CODEC_INVALID);
+    assert(sixel_encoder_init(&e, 4097, 4096) == CODEC_TOO_LARGE);
 
     /* A few colours, over heights that do and don't fill the last band. */
     for (n = 1; n <= 13; n++) {

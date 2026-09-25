@@ -108,6 +108,8 @@ enum codec_result sixel_encoder_init(struct sixel_encoder *e, unsigned width, un
     memset(e, 0, sizeof *e);
     if (width == 0 || height == 0 || width > 65535u || height > 65535u)
         return CODEC_INVALID;
+    if ((uint64_t)width * height > 16u * 1024u * 1024u)
+        return CODEC_TOO_LARGE;
     e->width = width;
     e->height = height;
     e->table = malloc(sizeof *e->table);
