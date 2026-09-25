@@ -32,6 +32,7 @@ Nothing lists the formats. `make test`, `scripts/build.sh`, `scripts/release.sh`
 | `zlib.[ch]` | codecs | `zlib_inflate`, `zlib_deflate`, `zlib_deflate_bound`: one-shot zlib streams through `z1.library`, or the system zlib in host tests |
 | `bcn.[ch]` | codecs | `bc1_block` to `bc5_block`: S3TC (DXT1–5) and RGTC block decoders to RGBA |
 | `bptc.[ch]` | codecs | `bc6h_block` (to half floats) and `bc7_block` (to RGBA) |
+| `atarist.h` | codecs | `st_level`, `st_nibble`, `st_palette`, `st_is_ste`: ST and STE palette words; `st_pixel`: interleaved bitplane screens |
 
 - It's a library, not a framework. Use what fits and write format-specific code where it doesn't. A streaming or non-picture format shouldn't bend to fit these helpers.
 - `build.sh` links `common/X.c` only when a file in the format includes `"common/X.h"`. It does not follow includes transitively, so include every common header you use directly.
