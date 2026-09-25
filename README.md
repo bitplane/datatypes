@@ -103,6 +103,15 @@ A file holds several images. `PDTA_WhichPicture` picks one by its position among
 Saves a one-image ICNS file when the picture is square: 24-bit packed with an 8-bit mask at 16, 32, 48 and 128 pixels, and PNG at 64, 256, 512 and 1024 pixels. Other sizes can't be saved. The package includes its `Devs/DataTypes/ICNS` descriptor, which matches the `icns` magic on files named `#?.icns`.
 `formats/icns/ICNS.dtyp` is the compiled form of `ICNS.dtd`; regenerate it with AROS's `createdtdesc -o formats/icns/ICNS.dtyp formats/icns/ICNS.dtd` if the recognition rules change.
 
+## MGR
+
+Reads 1-bit bitmaps from the MGR window system, with set bits in black: the current `yz` layout with depth 1 and rows padded to 8 bits, and the older `zz` and `xz` layouts padded to 16 and 32 bits. Sides are up to 4095, as the header encodes them. Bytes after the image are ignored. Saves `yz` with depth 1, as MGR and netpbm write it. Pixels are composited over white, then set black if their luminance is below half. Doesn't read colour MGR pixmaps (`yz` with depth 8, or `zy`). They index the MGR server's palette, which the file doesn't carry, and netpbm rejects them too. The package includes its `Devs/DataTypes/MGR` descriptor. MGR files usually have no extension, so it matches on content only: `yz`, then the depth byte for 1 (`!`), at priority -1. The decoder reads old `zz` and `xz` files, but the descriptor doesn't recognise them, so MultiView won't open them yet: a descriptor has one mask, and their two-byte magic is too weak to match on alone. Only one of the 367 files in MGR 0.69 uses an old layout.
+`formats/mgr/MGR.dtyp` is the compiled form of `MGR.dtd`; regenerate it with AROS's `createdtdesc -o formats/mgr/MGR.dtyp formats/mgr/MGR.dtd` if the recognition rules change.
+
+## CMU Window Manager
+
+Reads CMU window manager (Andrew Toolkit) bitmaps, where a clear bit is black and rows are padded to a byte. Both byte orders load: the magic `F1 00 40 BB` means big-endian, as netpbm reads it, and `BB 40 00 F1` means little-endian. As in the Andrew Toolkit's reader, the header is 14 bytes, or 16 when the file has at least two bytes more than a 14-byte header needs. The depth must be 1, read as 16 bits, or as 32 bits in a 16-byte header. Saves the big-endian 14-byte form, as netpbm and the Andrew Toolkit write it. Pixels are composited over white, then set black if their luminance is below half. The package includes its `Devs/DataTypes/CMUWM` descriptor. It matches the big-endian magic at priority 0. The decoder reads little-endian files, but the descriptor doesn't recognise them, because a package ships one descriptor with one mask.
+`formats/cmuwm/CMUWM.dtyp` is the compiled form of `CMUWM.dtd`; regenerate it with AROS's `createdtdesc -o formats/cmuwm/CMUWM.dtyp formats/cmuwm/CMUWM.dtd` if the recognition rules change.
 ## FAX
 
 Reads raw CCITT Group 3 fax files with one-dimensional (MH) coding, and CALS type 1 rasters, whose 2048-byte text header is followed by Group 4 (T.6) data. Images load as one-plane pictures, black on white.

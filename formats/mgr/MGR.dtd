@@ -1,0 +1,8 @@
+Name=MGR
+BaseName=mgr
+Pattern=#?
+Mask='y' 'z' ANY ANY ANY ANY '!'
+GroupID=pict
+ID=_mgr
+Flags=DTF_BINARY,DTF_CASE
+Priority=-1
