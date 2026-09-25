@@ -125,6 +125,11 @@ Saves raw Group 3 MH at the picture's own width, bits first-to-last, with an EOL
 The package includes its `Devs/DataTypes/FAX` descriptor. Raw G3 has no magic number and CALS starts with text, so the one descriptor matches files named `.g3`, `.fax`, `.cal`, `.cals` or `.ct1`, at priority -10.
 `formats/fax/FAX.dtyp` is the compiled form of `FAX.dtd`; regenerate it with AROS's `createdtdesc -o formats/fax/FAX.dtyp formats/fax/FAX.dtd` if the recognition rules change.
 
+## CompuServe RLE
+
+Reads CompuServe RLE (VIDTEX) pictures: `ESC G M` for 128x96 and `ESC G H` for 256x192. Each character after the header is a run of its code minus 32, alternating black and white, black first; an empty run just switches colour. As in netpbm's `cistopbm`, anything before the header is skipped, other control characters (CR, LF, BEL, NUL) are ignored, and any ESC, normally the closing `ESC G N`, ends the picture. Real files often stop a pixel or more short of the end before `ESC G N`, so pixels left unset are white, as netpbm shows them. A file without an ESC must fill the picture, or it is truncated. Runs past the last pixel are clamped, so trailing junk after a full picture is ignored. Bytes with the top bit set lose it, as on a 7-bit terminal line; netpbm counts them as long runs instead, which makes no difference in any collected file. The 640x200 `ESC G S` mode that some later terminals added isn't read, as netpbm rejects it too. Saves 128x96 when the picture fits, as `pbmtocis` does, and 256x192 otherwise, cropping larger pictures and padding smaller ones with white. Pixels are composited over white, then set black if their luminance is below half. Runs are at most 94 long, joined by empty runs, avoiding DEL. The package includes its `Devs/DataTypes/CIS` descriptor. It matches `ESC G` together with a name ending in `.rle` or `.cis`, at priority 0: two bytes are too weak to match on alone, and every collected file is named `.rle`.
+`formats/cis/CIS.dtyp` is the compiled form of `CIS.dtd`; regenerate it with AROS's `createdtdesc -o formats/cis/CIS.dtyp formats/cis/CIS.dtd` if the recognition rules change.
+
 ## Build and test
 
 ```sh
