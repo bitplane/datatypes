@@ -1,0 +1,7 @@
+Name=PAA
+BaseName=paa
+Pattern=#?.(paa|pac)
+GroupID=pict
+ID=_paa
+Flags=DTF_BINARY
+Priority=-10
