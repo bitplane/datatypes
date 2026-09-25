@@ -255,6 +255,17 @@ Reads X11 cursor files, as shipped in cursor themes on Linux desktops. Each imag
 Saves a one-image cursor with its hotspot at the top left and its larger side as the nominal size. Colours are premultiplied, so semi-transparent pixels lose some precision and fully transparent ones lose their colour. The package includes its `Devs/DataTypes/XCURSOR` descriptor, which matches the `Xcur` magic whatever the file is called, since theme cursors have no extension.
 `formats/xcursor/XCURSOR.dtyp` is the compiled form of `XCURSOR.dtd`; regenerate it with AROS's `createdtdesc -o formats/xcursor/XCURSOR.dtyp formats/xcursor/XCURSOR.dtd` if the recognition rules change.
 
+## KiSS CEL
+
+Reads KiSS paper-doll cels: old headerless 4-bit cels, KiSS/GS 4-bit and 8-bit cels, and Cherry KiSS 32-bit cels, which are BGRA with straight alpha. Index 0 is transparent. The picture includes the cel's x and y offset as transparent space, the way GIMP lays it out. KiSS keeps palettes in separate KCF files (old headerless 12-bit groups, or KiSS/GS 12-bit and 24-bit files of 16 or 256 colours). The class looks for one in the cel's directory, in this order:
+
+1. a `.cnf` configuration that lists the cel. The class uses the palette file after `*` and the palette group of the first set the cel is in.
+2. a `.kcf` with the cel's name.
+3. the directory's only `.kcf`.
+
+If none turns up, palette cels show a grey ramp, which GIMP 2 uses when you cancel its palette dialog. 12-bit colours scale by 16 (`0xF` becomes 240), as in GIMP. Saves 32-bit cels, which need no palette file, with offset 0.
+The package includes its `Devs/DataTypes/KISSCEL` descriptor. Old cels have no magic, so the descriptor has no mask. It matches files named `#?.cel` at priority -10, and the decoder rejects files whose sizes don't add up. `formats/kisscel/KISSCEL.dtyp` is the compiled form of `KISSCEL.dtd`; regenerate it with AROS's `createdtdesc -o formats/kisscel/KISSCEL.dtyp formats/kisscel/KISSCEL.dtd` if the recognition rules change.
+
 ## PAA
 
 Reads Bohemia Interactive PAA and PAC textures from Operation Flashpoint, Arma and DayZ. The block-compressed types are DXT1 to DXT5; DXT1 blocks can be transparent, as Direct3D reads them, and DXT2 and DXT4 are premultiplied, so their alpha is divided out. The others are ARGB4444, ARGB1555, ARGB8888 and 8-bit gray with alpha, all in Direct3D's channel order, with their alpha kept even when it is zero everywhere. Also reads Operation Flashpoint's 8-bit index-palette files, which have no type word, including the 1997 demo's, which have no taggs either; their levels are run-length or LZSS coded, and an index past the end of the palette is black. DXT levels flagged in the width's top bit are LZO-compressed, as Arma 2 and later write them; the other types are LZSS-compressed, and the checksum after the data must match, summed as signed or as unsigned bytes. Some third-party writers store those levels uncompressed, which is accepted when the level is exactly the uncompressed size. Taggs are skipped, including the swizzle tagg that normal and specular maps carry, so those load with their channels as stored. Palettes in typed files and bytes after the end marker are ignored.
