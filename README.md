@@ -125,6 +125,22 @@ Saves raw Group 3 MH at the picture's own width, bits first-to-last, with an EOL
 The package includes its `Devs/DataTypes/FAX` descriptor. Raw G3 has no magic number and CALS starts with text, so the one descriptor matches files named `.g3`, `.fax`, `.cal`, `.cals` or `.ct1`, at priority -10.
 `formats/fax/FAX.dtyp` is the compiled form of `FAX.dtd`; regenerate it with AROS's `createdtdesc -o formats/fax/FAX.dtyp formats/fax/FAX.dtd` if the recognition rules change.
 
+## Sun icon
+
+Reads SunView and OpenWindows icon and cursor files: a `/* Format_version=1, Width=64, Height=64, Depth=1, Valid_bits_per_item=16 */` comment followed by hex items.
+
+- **Depth=1** loads as a one-plane picture, set bits black on white, most significant bit first.
+- **Depth=8** loads as 256 grey levels, the stored value being the level, as netpbm shows it. These icons index a palette that the file doesn't carry.
+- Items may be 8, 16 or 32 bits wide, and each row is padded to whole items, as SunView's `mpr_static` lays it out.
+- The header comment may come after other comments or text (SCCS and RCS ids), its fields may be in any order, and missing fields take XView's defaults: 64 by 64, Depth=1, 16-bit items.
+- Items may be separated by commas, white space or comments.
+- **Not supported:** depths other than 1 and 8, and other `Format_version`s. Netpbm and XView reject these too.
+
+Saves Depth=1 with 16-bit items, as Sun's `iconedit` and netpbm write it. Pixels are composited over white, then set black if their luminance is below half. XView only loads widths that are multiples of 16, and netpbm only loads rows with an even number of bytes, so the saved width is rounded up to a multiple of 16 with white columns on the right.
+
+The package includes its `Devs/DataTypes/SUNICON` descriptor, which matches files starting with `/* Format_version=1`, whatever their name. Files with another comment before the header still load, but the descriptor doesn't recognise them. That's 5 of the 348 icons in the OpenLook CD-ROM archive.
+`formats/sunicon/SUNICON.dtyp` is the compiled form of `SUNICON.dtd`; regenerate it with AROS's `createdtdesc -o formats/sunicon/SUNICON.dtyp formats/sunicon/SUNICON.dtd` if the recognition rules change.
+
 ## Build and test
 
 ```sh
