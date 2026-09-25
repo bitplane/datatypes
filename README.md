@@ -42,6 +42,7 @@ In the Descriptor column, "AROS" means AROS already ships the `Devs/DataTypes` d
 | [Palm ImageViewer](formats/pdb/) | `.pdb` | Uncompressed grayscale | ours |
 | [PAM and PFM](formats/pam/) | `.pam` `.pfm` `.phm` | 8-bit PAM | ours |
 | [PCX](formats/pcx/) | `.pcx` | 24-bit RGB | AROS |
+| [Photoshop PSD and PSB](formats/psd/) | `.psd` `.pdd` `.psb` | Nothing | ours |
 | [Pixar](formats/pixar/) | `.pxr` `.pic` `.picio` `.pixar` | 8-bit RGB or RGBA | ours |
 | [PowerVR PVR](formats/pvr/) | `.pvr` | 8-bit RGB or RGBA | ours |
 | [QOI](formats/qoi/) | `.qoi` | RGB or RGBA | ours |
