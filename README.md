@@ -40,6 +40,7 @@ In the Descriptor column, "AROS" means AROS already ships the `Devs/DataTypes` d
 | [NEOchrome](formats/neo/) | `.neo` | ST screens that fit exactly | ours |
 | [OTB](formats/otb/) | `.otb` | 1-bit, one picture | ours |
 | [PAA](formats/paa/) | `.paa` `.pac` | ARGB8888 | ours |
+| [Paint Shop Pro](formats/psp/) | `.psp` `.pspimage` `.tub` `.psptube` and more | One 24-bit layer | ours |
 | [Palm bitmap](formats/palm/) | `.palm` | 8-bit indexed or RGB565 | ours |
 | [Palm ImageViewer](formats/pdb/) | `.pdb` | Uncompressed grayscale | ours |
 | [PAM and PFM](formats/pam/) | `.pam` `.pfm` `.phm` | 8-bit PAM | ours |

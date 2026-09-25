@@ -1,0 +1,8 @@
+Name=Paint Shop Pro
+BaseName=psp
+Pattern=#?.(psp#?|tub)
+Mask='P' 'a' 'i' 'n' 't' ' ' 'S' 'h' 'o' 'p' ' ' 'P' 'r' 'o' ' ' 'I' 'm' 'a' 'g' 'e' ' ' 'F' 'i' 'l' 'e' 0x0a 0x1a
+GroupID=pict
+ID=_psp
+Flags=DTF_BINARY,DTF_CASE
+Priority=0
