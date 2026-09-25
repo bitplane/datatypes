@@ -1,0 +1,8 @@
+Name=C64 picture
+BaseName=c64
+Pattern=#?.(k[ol]a|gig|ip[th]|rp[mho]|rp|f(p|pt|cp|p2|li|d2|ed|lg|lm|fl|fli|un)|gg|ocp|mpi|dr[zpl]|dlp|pi|bpl|a(64|rt|as|fl|mi)|wig|dol|vi[dc]|p64|c(du|he)|is[mh]|sar|pmg|mil|hp[ic]|he[dt]|ddp|dd|jj|h(bm|ir|ie|lf|le)|bml|mci|gun|ifl|ihe|ec[ip]|vhi)
+Mask=ANY ANY
+GroupID=pict
+ID=c64p
+Flags=DTF_BINARY,DTF_CASE
+Priority=-10

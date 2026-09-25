@@ -16,9 +16,8 @@
 #include "decode.h"
 #include "encode.h"
 
-/* Fixed-size screens are at most 24578 bytes. SXG pictures are a header,
-   a palette and up to ZXSCR_MAX_PIXELS bytes of pixels. */
-#define MAX_ZXSCR_FILE ((LONG)ZXSCR_MAX_PIXELS + 1024L)
+/* Room for a 16M-pixel picture that barely compresses. */
+#define MAX_JAPANPC_FILE (64L * 1024L * 1024L)
 
 ADD2LIBS((const UBYTE *)"datatypes/picture.datatype", 0, struct Library *, PictureBase);
 
@@ -27,24 +26,21 @@ struct collector {
     ULONG row;
 };
 
-static LONG load_zxscr(Class *cl, Object *obj)
+static LONG load_japanpc(Class *cl, Object *obj)
 {
-    struct zxscr_image image;
-    STRPTR name = NULL;
+    struct japanpc_image image;
     UBYTE *input;
     LONG size, error;
 
-    error = dt_read_file(obj, 1, MAX_ZXSCR_FILE, &input, &size);
+    error = dt_read_file(obj, 8, MAX_JAPANPC_FILE, &input, &size);
     if (error != 0 || input == NULL)
         return error;
-    /* Only the name tells 8x1 multicolour from Timex hi-colour. */
-    GetDTAttrs(obj, DTA_Name, &name, TAG_END);
-    error = dt_error(zxscr_decode(input, (size_t)size, zxscr_name_kind((const char *)name), &image));
+    error = dt_error(japanpc_decode(input, (size_t)size, &image));
     FreeVec(input);
     if (error != 0)
         return error;
     error = dt_put_rgba(cl, obj, image.rgba, image.width, image.height);
-    zxscr_free(&image);
+    japanpc_free(&image);
     if (error == 0)
         dt_set_name(obj);
     return error;
@@ -57,17 +53,17 @@ static BOOL collect_row(void *state, const UBYTE *rgba, ULONG width)
     return TRUE;
 }
 
-IPTR Zxscr__OM_NEW(Class *cl, Object *obj, struct opSet *msg)
+IPTR JapanPC__OM_NEW(Class *cl, Object *obj, struct opSet *msg)
 {
-    return dt_new(cl, obj, msg, load_zxscr);
+    return dt_new(cl, obj, msg, load_japanpc);
 }
 
-IPTR Zxscr__DTM_WRITE(Class *cl, Object *obj, struct dtWrite *msg)
+IPTR JapanPC__DTM_WRITE(Class *cl, Object *obj, struct dtWrite *msg)
 {
     struct collector c;
     UBYTE *output;
-    size_t length;
     ULONG width, height;
+    size_t capacity, size;
     IPTR success = FALSE;
 
     if (msg->dtw_Mode != DTWM_RAW)
@@ -75,19 +71,22 @@ IPTR Zxscr__DTM_WRITE(Class *cl, Object *obj, struct dtWrite *msg)
     /* MultiView probes RAW support without opening an output file. */
     if (msg->dtw_FileHandle == BNULL)
         return TRUE;
-    /* Only a whole 256x192 screen can be saved; check before allocating. */
-    if (!dt_picture_size(obj, &width, &height) ||
-        width != ZXSCR_WIDTH || height != ZXSCR_HEIGHT) {
+    if (!dt_picture_size(obj, &width, &height))
+        return FALSE;
+    capacity = japanpc_encode_bound(width, height);
+    if (capacity == 0) {
         SetIoErr(DTERROR_INVALID_DATA);
         return FALSE;
     }
     c.rgba = AllocVec(width * height * 4u, MEMF_ANY);
-    output = AllocVec(ZXSCR_TIMEX_SIZE, MEMF_ANY);
+    output = AllocVec(capacity, MEMF_ANY);
     c.row = 0;
     if (c.rgba != NULL && output != NULL && dt_each_row(cl, obj, collect_row, &c)) {
-        LONG error = dt_error(zxscr_encode(c.rgba, width, height, output, &length));
+        /* A MAG holds at most 256 colours. */
+        LONG error = dt_error(japanpc_encode(c.rgba, width, height, output,
+                                             capacity, &size));
         if (error == 0)
-            success = dt_write(msg->dtw_FileHandle, output, (LONG)length);
+            success = dt_write(msg->dtw_FileHandle, output, (LONG)size);
         else
             SetIoErr(error);
     }
