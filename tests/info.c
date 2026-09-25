@@ -554,6 +554,27 @@ static void test_newicons(void)
     assert(icon.entries[1].selected && !icon.entries[2].selected);
     assert(info_best(&icon) == 2);
 
+    /* All 256 NewIcon colours fit; there is no palette tail to clear. */
+    {
+        uint8_t full_palette[256][3] = {{0}};
+        uint8_t last_pen[1] = {255};
+        unsigned i;
+        for (i = 0; i < 256; i++)
+            full_palette[i][0] = (uint8_t)i;
+        newicon(1, 0, 1, 1, full_palette, 256, last_pen, im1);
+        tts[2] = im1[0];
+        tts[3] = im1[1];
+        tts[4] = NULL;
+        b->n = 0;
+        diskobject(b, &s);
+        planar(b, 4, 2, 2, 3, 0, pens4);
+        strings(b, &s);
+        parse_ok(b, &icon, 2);
+        decode_ok(b, &icon, 1, &image, 1, 1);
+        pixel(&image, 0, 0, 255, 0, 0, 0xff);
+        info_free(&image);
+    }
+
     /* Without the marker line, IM1= is only a tooltype. */
     tts[1] = "DONOTWAIT";
     b->n = 0;

@@ -541,7 +541,8 @@ static enum codec_result decode_newicon(const uint8_t *data, const struct info_e
         return result;
     }
     /* Pens past the palette show black. */
-    memset(palette[colours], 0, sizeof palette - colours * 3u);
+    if (colours < 256)
+        memset(palette[colours], 0, sizeof palette - colours * 3u);
     for (i = 0; i < count; i++)
         put(image->rgba + i * 4u, palette[pens[i]], transparent && pens[i] == 0 ? 0 : 0xff);
     return CODEC_OK;
