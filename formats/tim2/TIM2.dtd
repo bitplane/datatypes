@@ -1,0 +1,8 @@
+Name=TIM2
+BaseName=tim2
+Pattern=#?.(tm2|tim2)
+Mask='T' 'I' 'M' '2'
+GroupID=pict
+ID=tim2
+Flags=DTF_BINARY,DTF_CASE
+Priority=0
