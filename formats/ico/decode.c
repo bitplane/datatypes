@@ -136,6 +136,8 @@ static enum codec_result read_dib(const uint8_t *p, size_t size, size_t avail,
             dib->masks[2] = le32(p + pos + 8);
             pos += 12;
         } else {
+            if (header < 52)
+                return CODEC_INVALID;
             dib->masks[0] = le32(p + 40);
             dib->masks[1] = le32(p + 44);
             dib->masks[2] = le32(p + 48);

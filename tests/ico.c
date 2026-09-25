@@ -321,6 +321,11 @@ static void header_tests(void)
     assert(result(len) == CODEC_TRUNCATED);
     le32(file + 22 + 4, 1); le32(file + 22 + 8, 2);
     assert(result(len) == CODEC_OK);
+
+    /* A bitfields header must contain all three colour masks. */
+    n = info(img, 48, 1, 1, 16, 3, 0);
+    len = one(1, img, n);
+    assert(result(len) == CODEC_INVALID);
 }
 
 static size_t png(uint8_t *p, unsigned long width, unsigned long height,

@@ -73,18 +73,23 @@ static LONG load_png(const UBYTE *data, const struct ico_entry *entry,
     } else {
         width = header->bmh_Width;
         height = header->bmh_Height;
-        image->rgba = AllocVec(width * height * 4u, MEMF_ANY);
-        if (image->rgba == NULL)
-            error = ERROR_NO_FREE_STORE;
-        else if (!DoMethod(png, PDTM_READPIXELARRAY, (IPTR)image->rgba,
-                           PBPAFMT_RGBA, width * 4u, 0, 0, width, height))
+        if (width > ICO_MAX_SIDE || height > ICO_MAX_SIDE ||
+            (uint64_t)width * height > ICO_MAX_PIXELS) {
             error = DTERROR_INVALID_DATA;
-        if (error == 0) {
-            image->width = width;
-            image->height = height;
-        } else if (image->rgba != NULL) {
-            FreeVec(image->rgba);
-            image->rgba = NULL;
+        } else {
+            image->rgba = AllocVec((size_t)width * height * 4u, MEMF_ANY);
+            if (image->rgba == NULL)
+                error = ERROR_NO_FREE_STORE;
+            else if (!DoMethod(png, PDTM_READPIXELARRAY, (IPTR)image->rgba,
+                               PBPAFMT_RGBA, width * 4u, 0, 0, width, height))
+                error = DTERROR_INVALID_DATA;
+            if (error == 0) {
+                image->width = width;
+                image->height = height;
+            } else if (image->rgba != NULL) {
+                FreeVec(image->rgba);
+                image->rgba = NULL;
+            }
         }
     }
     DisposeDTObject(png);
