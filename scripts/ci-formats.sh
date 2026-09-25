@@ -26,6 +26,8 @@ fi
 selected=()
 while IFS= read -r -d '' path; do
     case "$path" in
+        formats/*/README.md)
+            ;;
         formats/*/*)
             format=${path#formats/}
             selected+=("${format%%/*}")

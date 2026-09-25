@@ -61,4 +61,4 @@ make release PACKAGE=<name> LEVEL=minor       # bumps version and date, tags, pu
 - The `date` in the `.conf` is the release date in the `$VER` string. `release.sh` updates it. Don't edit it by hand, and don't remove it: genmodule would then use the build time and builds would stop being reproducible.
 - Pushing a `<name>-<major>.<minor>` tag builds and releases only that format.
 - The AROS cross-build only runs in CI (`build.yml`: push to master, PRs, or a manual dispatch). A branch push alone does not build.
-- Update the format's section in `README.md`: what it reads, what it saves, and where its descriptor comes from.
+- Document the format in `formats/<name>/README.md` (under 150 words) and add one row to `README.md`'s format table. The `add-format` skill says what goes in each.

@@ -28,7 +28,7 @@ The goal of the project is loader parity with ImageMagick, Pillow and netpbm on 
 ## 3. Scope
 
 - **Fit:** only add a format if an 8-bit RGBA picture can show what the format is for. Reducing precision is fine (16-bit or 10-bit channels to 8-bit, as the stock PNG and TIFF classes do). Losing dynamic range, vectors or layers is not: no HDR or science-data loaders, and no vector formats that only show embedded bitmaps. If faithful display needs compositing or rendering, implement all of it or don't add the format. If a queued format fails this test, stop and report instead of building it.
-- **Reading:** support every variant that at least two of the reference tools read. Add variants that only one reads where practical. Reject the rest with `CODEC_INVALID`, and list them as unsupported in the format's README section.
+- **Reading:** support every variant that at least two of the reference tools read. Add variants that only one reads where practical. Reject the rest with `CODEC_INVALID`, and list them as unsupported in `formats/<name>/README.md`.
 - **Writing:** implement `DTM_WRITE` wherever the format has a sensible writer, choosing the simplest lossless variant that covers the image (for example opaque vs alpha, like Targa's 24/32-bit choice). Read-only is fine where writing makes no sense.
 - **Multi-image files** (pages, frames, mipmaps, icon directories, layers): support `PDTA_WhichPicture` (the index to load, in file order) and `PDTA_GetNumPictures` (a `ULONG *` filled in with the count), both given in `OM_NEW`'s tags. `dt_new` doesn't pass tags to the loader, so write your own `OM_NEW` that reads them from `msg->ops_AttrList`. When no index is requested, load the first image for pages, frames and mipmaps (as AROS's stock classes do), and the largest, then deepest, image for icon formats.
 
@@ -65,7 +65,10 @@ The goal of the project is loader parity with ImageMagick, Pillow and netpbm on 
 
 ## 7. Pull request
 
-1. Commit in the style of the existing history. Update the format's section in `README.md`: what it reads, what it saves, and where its descriptor comes from.
+1. Commit in the style of the existing history. Document the format for someone with a file to open, not someone reviewing the code:
+   - `formats/<name>/README.md`: what it reads (programs, variants, extensions), what it saves, what it rejects, and how the descriptor matches files, including clashes with other formats. Stay under 150 words; a class covering many programs may use a short table of them instead. Don't restate the `createdtdesc` rule.
+   - `README.md`: one row in the format table, in alphabetical order. Nothing else.
+   - Leave out comparisons with the reference tools, tolerance of odd files, internals and your reasoning. They go in the PR body.
 2. Open a draft PR against `master`. The body covers:
    - what loads and saves, and which variants are unsupported
    - how the descriptor recognises files
