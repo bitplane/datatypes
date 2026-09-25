@@ -1,4 +1,5 @@
 #include "encode.h"
+#include "common/atarist.h"
 #include <string.h>
 
 static void put_be16(uint8_t *p, unsigned v)
@@ -12,21 +13,10 @@ static uint8_t over_white(uint8_t c, uint8_t a)
     return (uint8_t)((c * a + 255u * (255u - a) + 127u) / 255u);
 }
 
-/* The palette nibble that decodes to level, or -1 if there is none. */
-static int nibble(uint8_t level, int ste)
-{
-    unsigned n;
-
-    for (n = 0; n < 16; n++)
-        if ((ste || n < 8) && neo_level(n, ste) == level)
-            return (int)n;
-    return -1;
-}
-
 /* The 12-bit palette entry for rgb, or -1 if it can't be stored. */
 static int entry(const uint8_t *rgb, int ste)
 {
-    int r = nibble(rgb[0], ste), g = nibble(rgb[1], ste), b = nibble(rgb[2], ste);
+    int r = st_nibble(rgb[0], ste), g = st_nibble(rgb[1], ste), b = st_nibble(rgb[2], ste);
 
     if (r < 0 || g < 0 || b < 0)
         return -1;
