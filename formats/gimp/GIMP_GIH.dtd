@@ -1,0 +1,7 @@
+Name=GIMP Brush Pipe
+BaseName=gimp
+Pattern=#?.gih
+GroupID=pict
+ID=gihp
+Flags=DTF_BINARY
+Priority=-10

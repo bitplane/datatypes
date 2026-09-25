@@ -1,0 +1,8 @@
+Name=GIMP Pattern
+BaseName=gimp
+Pattern=#?.pat
+Mask=ANYANYANYANYANYANYANYANYANYANYANYANYANYANYANYANYANYANYANYANY'G''P''A''T'
+GroupID=pict
+ID=gpat
+Flags=DTF_BINARY,DTF_CASE
+Priority=0
