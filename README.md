@@ -387,6 +387,33 @@ Saves an 8-bit RGB RLA file. When the picture has transparency it adds a matte c
 
 Reads Lunapaint projects (`Lunapaint_v1`), the layered and animated format of AROS's own paint program, and shows each frame flattened. Layers are composited bottom up, as Lunapaint draws them. Hidden layers and layers at 0% opacity are left out, and each layer's alpha is scaled by its opacity. Channels are 16 bits in the file and keep their top 8 bits, as Lunapaint shows them. Where the picture below is opaque, the arithmetic is Lunapaint's own, so those pixels match what Lunapaint shows exactly. Where it isn't, layers are blended with straight-alpha "over" and the transparency is kept. Lunapaint's own PNG export tints those pixels grey and adds the alphas together. The file doesn't record its byte order, so the class tries both and keeps the one whose object table ends exactly at the end of the file, little-endian if both fit. Each frame is a separate picture selected with `PDTA_WhichPicture`; the default is the first frame. Layer attributes come from every record in the object table. Lunapaint's own loader stops after the first frame's records, and it also counts three records per layer where a layer with no name has only two. A table that is short, ends mid-record or holds records for layers that don't exist is read as far as it makes sense, and missing attributes keep Lunapaint's defaults (visible, 100%). Only the layers of the chosen frame are read from the file, so large animations don't need to fit in memory. Saves a one-layer, one-frame project in the byte order of the machine saving it, which is what Lunapaint on that machine reads. Each 8-bit channel is widened exactly (times 257), so a saved picture loads back unchanged, except that fully transparent pixels load as transparent black. Pictures wider or taller than 32767 can't be saved, because Lunapaint stores sizes as signed shorts. AROS's `Devs/DataTypes/Lunapaint` descriptor selects the class by the `Lunapaint_v1` magic.
 
+## Atari ST compressed paint
+
+Reads the compressed pictures of eight Atari ST paint programs:
+
+- Tiny (`.tny`, `.tn1`–`.tn6`), including the colour-cycling modes 3–5, whose cycling data is ignored
+- CrackArt (`.ca1`–`.ca3`), compressed or not
+- Imagic (`.ic1`–`.ic3`)
+- STAD (`.pac`), packed across or down
+- compressed Dali (`.lpk`, `.mpk`, `.hpk`)
+- Pablo Paint (`.ppp`, `.pa3`)
+- Picworks (`.cp3`)
+- PaintShop (`.psc`), which alone keeps its own size of up to 640×400
+
+The others give a 320×200 16-colour, 640×200 4-colour or 640×400 black-on-white screen, as `neo` does. The ST and STE palette rules are also `neo`'s. Imagic's film deltas load with zeros where the base picture would show.
+
+Some writers stop a STAD file one byte short of the screen. That last byte is left white rather than rejecting the file. Tiny files with more than 512 bytes after their data are rejected. Programs on other systems also use the `.tn4` name, and RECOIL shows those files as stripes.
+
+Unsupported:
+
+- Pablo's compressed variant (type 29), which is undocumented, with no known samples
+- uncompressed Imagic pictures, of which none are known
+
+Uncompressed Dali (`.sd0`–`.sd2`) and Paintworks belong to the ST screen class.
+
+Saves Tiny for the three screen sizes, with the same colour rules as NEOchrome. The package includes two descriptors. `STPAINT` matches the other extensions by name at priority -10, while `STPAINT_PAC` matches `.pac` files beginning with `pM8` at priority -9. This lets Bohemia PAA `.pac` files reach the PAA descriptor. The decoder recognises Imagic (`IMDC`), STAD (`pM85`/`pM86`), PaintShop (`tm89`), Pablo and CrackArt by their signatures, and the rest by extension. Dali stores its resolution only in the extension.
+`formats/stpaint/STPAINT.dtyp` and `STPAINT_PAC.dtyp` are compiled from their matching `.dtd` files with AROS's `createdtdesc`.
+
 ## Build and test
 
 ```sh
