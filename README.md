@@ -125,6 +125,17 @@ Saves raw Group 3 MH at the picture's own width, bits first-to-last, with an EOL
 The package includes its `Devs/DataTypes/FAX` descriptor. Raw G3 has no magic number and CALS starts with text, so the one descriptor matches files named `.g3`, `.fax`, `.cal`, `.cals` or `.ct1`, at priority -10.
 `formats/fax/FAX.dtyp` is the compiled form of `FAX.dtd`; regenerate it with AROS's `createdtdesc -o formats/fax/FAX.dtyp formats/fax/FAX.dtd` if the recognition rules change.
 
+## Pixar
+
+Reads 8-bit Pixar Image Computer (picio) pictures: the `.pxr` files Photoshop writes, and the `.pic` files from Pixar's own software and from tools like Altamira Composer. RGB and RGBA load as they are. A single channel loads as grey, and red plus alpha loads as grey with alpha. Pixels can be dumped raw or encoded as run-length packets split into disk blocks, in one tile or many. Edge tiles are stored full size, and the loader drops the part outside the picture. A null tile shows as black, or as transparent when the picture has alpha. Matted-to-black alpha is premultiplied, so the loader converts it to straight alpha. Unassociated alpha loads unchanged, even when it is zero everywhere.
+
+12-bit storage is not supported. Its samples are fixed point, with 1.0 at 2048 and headroom above white, and no 12-bit sample files turned up to test against. Other channel combinations are rejected too.
+
+Saves one dumped 8-bit tile at offset 1024, the layout Photoshop writes. An opaque picture is saved as RGB, which Pillow can read. Anything with transparency is saved as RGBA with unassociated alpha.
+
+The package includes its `Devs/DataTypes/PIXAR` descriptor. It matches the magic `80 E8 00 00` in files named `.pxr`, `.pic`, `.picio` or `.pixar`.
+`formats/pixar/PIXAR.dtyp` is the compiled form of `PIXAR.dtd`; regenerate it with AROS's `createdtdesc -o formats/pixar/PIXAR.dtyp formats/pixar/PIXAR.dtd` if the recognition rules change.
+
 ## Build and test
 
 ```sh
