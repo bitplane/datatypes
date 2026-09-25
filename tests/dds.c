@@ -1,4 +1,5 @@
-#include "../formats/dds/bcn.h"
+#include "common/bcn.h"
+#include "common/bptc.h"
 #include "../formats/dds/decode.h"
 #include "../formats/dds/encode.h"
 #include <assert.h>
