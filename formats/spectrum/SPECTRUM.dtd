@@ -1,0 +1,8 @@
+Name=Spectrum 512
+BaseName=spectrum
+Pattern=#?.(spu|spc)
+Mask=ANY ANY ANY ANY
+GroupID=pict
+ID=spec
+Flags=DTF_BINARY,DTF_CASE
+Priority=-10
