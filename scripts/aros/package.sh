@@ -16,13 +16,14 @@ work=$(mktemp -d "$work_root/datatype-package.XXXXXXXX")
 trap 'rm -rf "$work"' EXIT HUP INT TERM
 mkdir -p "$work/$package/Classes/DataTypes" "$work/$package/Help/$package"
 cp "$module" "$work/$package/Classes/DataTypes/"
-descriptor=$(printf '%s' "$package" | tr '[:lower:]' '[:upper:]')
-if [ -f "formats/$package/$descriptor.dtyp" ]; then
+for source in formats/$package/*.dtyp; do
+    [ -f "$source" ] || continue
+    descriptor=${source##*/}
+    descriptor=${descriptor%.dtyp}
     mkdir -p "$work/$package/Devs/DataTypes"
-    cp "formats/$package/$descriptor.dtyp" \
-       "$work/$package/Devs/DataTypes/$descriptor"
+    cp "$source" "$work/$package/Devs/DataTypes/$descriptor"
     chmod 644 "$work/$package/Devs/DataTypes/$descriptor"
-fi
+done
 cp LICENSE "$work/$package/Help/$package/LICENSE"
 chmod 644 "$work/$package/Classes/DataTypes/$package.datatype" \
           "$work/$package/Help/$package/LICENSE"

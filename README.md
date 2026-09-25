@@ -314,8 +314,8 @@ Unsupported:
 
 Uncompressed Dali (`.sd0`–`.sd2`) and Paintworks belong to the ST screen class.
 
-Saves Tiny for the three screen sizes, with the same colour rules as NEOchrome. The package includes its `Devs/DataTypes/STPAINT` descriptor. Tiny, Dali and Picworks have no magic number, and a package ships one descriptor, so it matches the file name alone at priority -10. The decoder recognises Imagic (`IMDC`), STAD (`pM85`/`pM86`), PaintShop (`tm89`), Pablo and CrackArt by their signatures, and the rest by extension. Dali stores its resolution only in the extension.
-`formats/stpaint/STPAINT.dtyp` is the compiled form of `STPAINT.dtd`; regenerate it with AROS's `createdtdesc -o formats/stpaint/STPAINT.dtyp formats/stpaint/STPAINT.dtd` if the recognition rules change.
+Saves Tiny for the three screen sizes, with the same colour rules as NEOchrome. The package includes two descriptors. `STPAINT` matches the other extensions by name at priority -10, while `STPAINT_PAC` matches `.pac` files beginning with `pM8` at priority -9. This lets Bohemia PAA `.pac` files reach the PAA descriptor. The decoder recognises Imagic (`IMDC`), STAD (`pM85`/`pM86`), PaintShop (`tm89`), Pablo and CrackArt by their signatures, and the rest by extension. Dali stores its resolution only in the extension.
+`formats/stpaint/STPAINT.dtyp` and `STPAINT_PAC.dtyp` are compiled from their matching `.dtd` files with AROS's `createdtdesc`.
 
 ## Build and test
 
