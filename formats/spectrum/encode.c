@@ -1,4 +1,5 @@
 #include "encode.h"
+#include "common/atarist.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -51,23 +52,12 @@ static uint8_t over_white(uint8_t c, uint8_t a)
     return (uint8_t)((c * a + 255u * (255u - a) + 127u) / 255u);
 }
 
-/* The palette nibble that decodes to level, or -1 if there is none. */
-static int nibble(uint8_t level, int ste)
-{
-    unsigned n;
-
-    for (n = 0; n < 16; n++)
-        if ((ste || n < 8) && spectrum_level(n, ste) == level)
-            return (int)n;
-    return -1;
-}
-
 /* The palette word for a pixel, or -1 if it can't be stored. */
 static int entry(const uint8_t *p, int ste)
 {
-    int r = nibble(over_white(p[0], p[3]), ste);
-    int g = nibble(over_white(p[1], p[3]), ste);
-    int b = nibble(over_white(p[2], p[3]), ste);
+    int r = st_nibble(over_white(p[0], p[3]), ste);
+    int g = st_nibble(over_white(p[1], p[3]), ste);
+    int b = st_nibble(over_white(p[2], p[3]), ste);
 
     if (r < 0 || g < 0 || b < 0)
         return -1;

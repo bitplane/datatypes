@@ -1,5 +1,6 @@
 #include "../formats/spectrum/decode.h"
 #include "../formats/spectrum/encode.h"
+#include "common/atarist.h"
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -118,14 +119,14 @@ static void test_levels_and_slots(void)
     unsigned c, n;
 
     /* ST levels scale like netpbm's maxval 7; STE levels are 4-bit. */
-    assert(spectrum_level(0, 0) == 0 && spectrum_level(1, 0) == 36);
-    assert(spectrum_level(3, 0) == 109 && spectrum_level(7, 0) == 255);
-    assert(spectrum_level(8, 0) == 0 && spectrum_level(0xf, 0) == 255);
-    assert(spectrum_level(0, 1) == 0 && spectrum_level(8, 1) == 17);
-    assert(spectrum_level(1, 1) == 34 && spectrum_level(0xf, 1) == 255);
-    assert(spectrum_level(7, 1) == 238);
+    assert(st_level(0, 0) == 0 && st_level(1, 0) == 36);
+    assert(st_level(3, 0) == 109 && st_level(7, 0) == 255);
+    assert(st_level(8, 0) == 0 && st_level(0xf, 0) == 255);
+    assert(st_level(0, 1) == 0 && st_level(8, 1) == 17);
+    assert(st_level(1, 1) == 34 && st_level(0xf, 1) == 255);
+    assert(st_level(7, 1) == 238);
     for (n = 0; n < 16; n++)
-        assert(spectrum_level(n | 0x70, 1) == spectrum_level(n, 1));
+        assert(st_level(n | 0x70, 1) == st_level(n, 1));
 
     /* Even indexes change slot at 10c+1 and 10c+161, odd ones at 10c-5 and 10c+155. */
     for (c = 0; c < 16; c++) {
@@ -365,14 +366,14 @@ static void test_encode(void)
 
     /* 17 colours in one segment, or 49 in a line, don't fit. */
     for (x = 0; x < 17; x++) {
-        rgba[(320u * 20u + 30u + x) * 4u] = spectrum_level(x % 8u, 0);
-        rgba[(320u * 20u + 30u + x) * 4u + 1u] = spectrum_level(x / 8u, 0);
+        rgba[(320u * 20u + 30u + x) * 4u] = st_level(x % 8u, 0);
+        rgba[(320u * 20u + 30u + x) * 4u + 1u] = st_level(x / 8u, 0);
     }
     assert(spectrum_encode(rgba, 320, 200, out) == CODEC_INVALID);
     for (x = 0; x < 320; x++) {
         unsigned w = (x / 6u) % 49u;
-        rgba[(320u * 20u + x) * 4u] = spectrum_level(w % 8u, 0);
-        rgba[(320u * 20u + x) * 4u + 1u] = spectrum_level(w / 8u, 0);
+        rgba[(320u * 20u + x) * 4u] = st_level(w % 8u, 0);
+        rgba[(320u * 20u + x) * 4u + 1u] = st_level(w / 8u, 0);
     }
     assert(spectrum_encode(rgba, 320, 200, out) == CODEC_INVALID);
 
@@ -381,9 +382,9 @@ static void test_encode(void)
         for (x = 0; x < 320; x++) {
             unsigned w = (x / 7u + y) % 48u;
             uint8_t *p = rgba + ((size_t)y * 320u + x) * 4u;
-            p[0] = spectrum_level(w % 8u, 0);
-            p[1] = spectrum_level(w / 8u, 0);
-            p[2] = spectrum_level(y % 8u, 0);
+            p[0] = st_level(w % 8u, 0);
+            p[1] = st_level(w / 8u, 0);
+            p[2] = st_level(y % 8u, 0);
             p[3] = 255;
         }
     assert(spectrum_encode(rgba, 320, 200, out) == CODEC_OK);

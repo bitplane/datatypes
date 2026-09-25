@@ -1,0 +1,7 @@
+Name=Alias
+BaseName=alias
+Pattern=#?.(rla|pix|als|alias)
+GroupID=pict
+ID=_als
+Flags=DTF_BINARY
+Priority=-10
