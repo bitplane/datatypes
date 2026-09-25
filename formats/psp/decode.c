@@ -574,170 +574,102 @@ static enum codec_result read_layer(const struct file *f, const struct block *b,
     return CODEC_OK;
 }
 
-/* ---- blending ---- */
+/* ---- blending ----
+
+   Paint Shop Pro's blend arithmetic, as its own composites show it (fitted
+   to Paint Shop Pro 8 over every mode, opacity and pair of alphas). s is
+   the layer's colour, a its alpha (transparency and masks), o its opacity;
+   d the colour below, da its alpha, all 0..1 or 0..255 as noted. With
+   ao = a * o the result's alpha is always ao + da * (1 - ao). */
 
 static unsigned mul255(unsigned a, unsigned b)
 {
     return (a * b + 127u) / 255u;
 }
 
-static unsigned isqrt(unsigned v)
+static float round_f(float v)
 {
-    unsigned r = 0, bit = 1u << 30;
-    while (bit > v)
-        bit >>= 2;
-    while (bit != 0) {
-        if (v >= r + bit) {
-            v -= r + bit;
-            r = (r >> 1) + bit;
-        } else {
-            r >>= 1;
-        }
-        bit >>= 2;
-    }
+    return (float)(long)(v + 0.5f);
+}
+
+static float clamp255(float v)
+{
+    return v < 0 ? 0 : v > 255 ? 255 : v;
+}
+
+static float sqrt_f(float v)
+{
+    float r = v > 1 ? v : 1;
+    int i;
+    if (v <= 0)
+        return 0;
+    for (i = 0; i < 24; i++)
+        r = 0.5f * (r + v / r);
     return r;
 }
 
-static unsigned separable(unsigned mode, unsigned s, unsigned d)
+/* The separable modes on 0..255 values. */
+static float separable(unsigned mode, float s, float d)
 {
-    unsigned v;
+    float sf, df;
 
     switch (mode) {
-    case 1: return s < d ? s : d;                         /* darken */
-    case 2: return s > d ? s : d;                         /* lighten */
-    case 7: return mul255(s, d);                          /* multiply */
-    case 8: return 255u - mul255(255u - s, 255u - d);     /* screen */
-    case 10:                                              /* overlay */
-        return d < 128 ? mul255(2u * s, d) : 255u - mul255(2u * (255u - s), 255u - d);
-    case 11:                                              /* hard light */
-        return s < 128 ? mul255(2u * s, d) : 255u - mul255(2u * (255u - s), 255u - d);
-    case 12:                                              /* soft light */
-        if (s < 128)
-            return d - mul255(mul255(255u - 2u * s, d), 255u - d);
-        if (d < 64) {
-            /* ((16d - 12)d + 4)d, for d in 0..1, scaled to 255 */
-            long dd = (long)d, t = ((16 * dd - 12 * 255) * dd / 255 + 4 * 255) * dd / 255;
-            v = t < 0 ? 0 : t > 255 ? 255 : (unsigned)t;
-        } else {
-            v = isqrt(d * 255u);
-        }
-        return d + mul255(2u * s - 255u, v > d ? v - d : 0);
-    case 13: return s > d ? s - d : d - s;                /* difference */
-    case 14:                                              /* dodge */
-        if (s == 255)
-            return d ? 255 : 0;
-        v = (d * 255u + (255u - s) / 2u) / (255u - s);
-        return v > 255 ? 255 : v;
-    case 15:                                              /* burn */
-        if (s == 0)
-            return d == 255 ? 255 : 0;
-        v = ((255u - d) * 255u + s / 2u) / s;
-        return v > 255 ? 0 : 255u - v;
-    case 16: return s + d - 2u * mul255(s, d);            /* exclusion */
+    case 1: return s < d ? s : d;                              /* darken */
+    case 2: return s > d ? s : d;                              /* lighten */
+    case 7: return round_f(s * d / 255);                       /* multiply */
+    case 8: return 255 - round_f((255 - s) * (255 - d) / 255); /* screen */
+    case 10:                                                   /* overlay */
+        return d < 128 ? round_f(2 * s * d / 255) : 255 - round_f(2 * (255 - s) * (255 - d) / 255);
+    case 11:                                                   /* hard light */
+        return s < 128 ? round_f(2 * s * d / 255) : 255 - round_f(2 * (255 - s) * (255 - d) / 255);
+    case 12:                                                   /* soft light */
+        sf = s / 255;
+        df = d / 255;
+        if (sf <= 0.5f)
+            return round_f((2 * sf * df + df * df * (1 - 2 * sf)) * 255);
+        return round_f((2 * df * (1 - sf) + sqrt_f(df) * (2 * sf - 1)) * 255);
+    case 13: return s > d ? s - d : d - s;                     /* difference */
+    case 16: return s + d - round_f(2 * s * d / 255);          /* exclusion */
     default: return s;
     }
 }
 
-/* HSL of an RGB colour, all 0..255 (hue 0..1530 in six 255 steps). */
-static void to_hsl(const unsigned c[3], unsigned *h, unsigned *s, unsigned *l)
+/* Luminosity-preserving blends with 0.3/0.59/0.11 weights: Paint Shop Pro's
+   legacy hue, saturation, colour and luminance modes. */
+static float lum_of(const float c[3])
 {
-    unsigned max = c[0], min = c[0], i, delta;
-    for (i = 1; i < 3; i++) {
-        if (c[i] > max) max = c[i];
-        if (c[i] < min) min = c[i];
-    }
-    *l = (max + min + 1) / 2;
-    delta = max - min;
-    if (delta == 0) {
-        *h = *s = 0;
-        return;
-    }
-    *s = (*l < 128 ? delta * 255u / (max + min) : delta * 255u / (510u - max - min));
-    if (max == c[0])
-        *h = (c[1] >= c[2] ? 0 : 1530) + (unsigned)(((long)c[1] - (long)c[2]) * 255 / (long)delta);
-    else if (max == c[1])
-        *h = 510u + (unsigned)(((long)c[2] - (long)c[0]) * 255 / (long)delta + 0);
-    else
-        *h = 1020u + (unsigned)(((long)c[0] - (long)c[1]) * 255 / (long)delta);
-    *h %= 1530u;
+    return c[0] * 0.3f + c[1] * 0.59f + c[2] * 0.11f;
 }
 
-static unsigned hue_channel(long m1, long m2, long h)
+static void set_lum(float c[3], float l)
 {
-    long v;
-    if (h < 0) h += 1530;
-    if (h >= 1530) h -= 1530;
-    if (h < 255) v = m1 + (m2 - m1) * h / 255;
-    else if (h < 765) v = m2;
-    else if (h < 1020) v = m1 + (m2 - m1) * (1020 - h) / 255;
-    else v = m1;
-    return v < 0 ? 0 : v > 255 ? 255 : (unsigned)v;
-}
-
-static void from_hsl(unsigned h, unsigned s, unsigned l, unsigned c[3])
-{
-    long m2, m1;
-    if (s == 0) {
-        c[0] = c[1] = c[2] = l;
-        return;
-    }
-    m2 = l < 128 ? (long)l * (255 + s) / 255 : (long)l + s - (long)l * s / 255;
-    m1 = 2 * (long)l - m2;
-    c[0] = hue_channel(m1, m2, (long)h + 510);
-    c[1] = hue_channel(m1, m2, (long)h);
-    c[2] = hue_channel(m1, m2, (long)h - 510);
-}
-
-/* Luminosity-preserving modes, as in the W3C compositing spec. */
-static long lum(const long c[3])
-{
-    return (c[0] * 77 + c[1] * 151 + c[2] * 28 + 128) >> 8;
-}
-
-static void clip_colour(long c[3])
-{
-    long l = lum(c), n = c[0], x = c[0];
+    float d = l - lum_of(c), n, x;
     int i;
+
+    for (i = 0; i < 3; i++)
+        c[i] += d;
+    l = lum_of(c);
+    n = x = c[0];
     for (i = 1; i < 3; i++) {
         if (c[i] < n) n = c[i];
         if (c[i] > x) x = c[i];
     }
     for (i = 0; i < 3; i++) {
-        if (n < 0 && l != n)
+        if (n < 0 && l - n > 0)
             c[i] = l + (c[i] - l) * l / (l - n);
-        if (x > 255 && x != l)
-            c[i] = l + (c[i] - l) * (255 - l) / (x - l);
-        if (c[i] < 0) c[i] = 0;
-        if (c[i] > 255) c[i] = 255;
+        if (x > 1 && x - l > 0)
+            c[i] = l + (c[i] - l) * (1 - l) / (x - l);
     }
 }
 
-static void set_lum(long c[3], long l)
-{
-    long d = l - lum(c);
-    c[0] += d; c[1] += d; c[2] += d;
-    clip_colour(c);
-}
-
-static long sat(const long c[3])
-{
-    long n = c[0], x = c[0];
-    int i;
-    for (i = 1; i < 3; i++) {
-        if (c[i] < n) n = c[i];
-        if (c[i] > x) x = c[i];
-    }
-    return x - n;
-}
-
-static void set_sat(long c[3], long s)
+static void set_sat(float c[3], float s)
 {
     int max = 0, min = 0, mid, i;
     for (i = 1; i < 3; i++) {
         if (c[i] > c[max]) max = i;
         if (c[i] < c[min]) min = i;
     }
-    if (max == min) {
+    if (c[max] <= c[min]) {
         c[0] = c[1] = c[2] = 0;
         return;
     }
@@ -747,52 +679,119 @@ static void set_sat(long c[3], long s)
     c[min] = 0;
 }
 
-/* The blended colour of layer colour s over d. */
-static void blend_colour(unsigned mode, const uint8_t *s, const uint8_t *d,
-                         unsigned out[3])
+static float sat_of(const float c[3])
+{
+    float n = c[0], x = c[0];
+    int i;
+    for (i = 1; i < 3; i++) {
+        if (c[i] < n) n = c[i];
+        if (c[i] > x) x = c[i];
+    }
+    return x - n;
+}
+
+static void luminosity_blend(unsigned kind, const float *s8, const float *d8, float out[3])
+{
+    float s[3], d[3], t[3];
+    int i;
+
+    for (i = 0; i < 3; i++) {
+        s[i] = s8[i] / 255;
+        d[i] = d8[i] / 255;
+    }
+    switch (kind) {
+    case 3:
+        memcpy(t, s, sizeof t);
+        set_sat(t, sat_of(d));
+        set_lum(t, lum_of(d));
+        break;
+    case 4:
+        memcpy(t, d, sizeof t);
+        set_sat(t, sat_of(s));
+        set_lum(t, lum_of(d));
+        break;
+    case 5:
+        memcpy(t, s, sizeof t);
+        set_lum(t, lum_of(d));
+        break;
+    default:
+        memcpy(t, d, sizeof t);
+        set_lum(t, lum_of(s));
+        break;
+    }
+    for (i = 0; i < 3; i++)
+        out[i] = round_f(clamp255(t[i] * 255));
+}
+
+/* HSL, hue 0..1: Paint Shop Pro 8's hue, saturation, colour and lightness
+   modes swap these components. */
+static void to_hsl(const float *c8, float *h, float *s, float *l)
+{
+    float r = c8[0] / 255, g = c8[1] / 255, b = c8[2] / 255;
+    float mx = r > g ? (r > b ? r : b) : (g > b ? g : b);
+    float mn = r < g ? (r < b ? r : b) : (g < b ? g : b);
+    float d = mx - mn;
+
+    *l = (mx + mn) / 2;
+    if (d <= 0) {
+        *h = *s = 0;
+        return;
+    }
+    *s = d / (*l < 0.5f ? mx + mn : 2 - mx - mn);
+    if (mx == r)
+        *h = (g - b) / d + (g < b ? 6 : 0);
+    else if (mx == g)
+        *h = (b - r) / d + 2;
+    else
+        *h = (r - g) / d + 4;
+    *h /= 6;
+}
+
+static float hue_part(float p, float q, float t)
+{
+    t -= (float)(long)t;
+    if (t < 0)
+        t += 1;
+    if (t < 1.0f / 6)
+        return p + (q - p) * 6 * t;
+    if (t < 0.5f)
+        return q;
+    if (t < 2.0f / 3)
+        return p + (q - p) * (2.0f / 3 - t) * 6;
+    return p;
+}
+
+static void from_hsl(float h, float s, float l, float out[3])
+{
+    float q = l < 0.5f ? l * (1 + s) : l + s - l * s, p = 2 * l - q;
+    out[0] = round_f(hue_part(p, q, h + 1.0f / 3) * 255);
+    out[1] = round_f(hue_part(p, q, h) * 255);
+    out[2] = round_f(hue_part(p, q, h - 1.0f / 3) * 255);
+}
+
+static void hsl_blend(unsigned mode, const float *s, const float *d, float out[3])
+{
+    float sh, ss, sl, dh, ds, dl;
+    to_hsl(s, &sh, &ss, &sl);
+    to_hsl(d, &dh, &ds, &dl);
+    switch (mode) {
+    case 17: from_hsl(ss > 0 ? sh : dh, ds, dl, out); break;
+    case 18: from_hsl(dh, ss, dl, out); break;
+    case 19: from_hsl(sh, ss, dl, out); break;
+    default: from_hsl(dh, ds, sl, out); break;
+    }
+}
+
+static void blend_colour(unsigned mode, const float *s, const float *d, float out[3])
 {
     unsigned i;
-
-    if (mode <= 2 || (mode >= 7 && mode <= 16)) {
+    if (mode >= 3 && mode <= 6)
+        luminosity_blend(mode, s, d, out);
+    else if (mode >= 17)
+        hsl_blend(mode, s, d, out);
+    else
         for (i = 0; i < 3; i++)
             out[i] = separable(mode, s[i], d[i]);
-    } else if (mode >= 3 && mode <= 6) {
-        /* The legacy modes swap HSL components. */
-        unsigned sc[3] = { s[0], s[1], s[2] }, dc[3] = { d[0], d[1], d[2] };
-        unsigned sh, ss, sl, dh, ds, dl;
-        to_hsl(sc, &sh, &ss, &sl);
-        to_hsl(dc, &dh, &ds, &dl);
-        switch (mode) {
-        case 3: from_hsl(ss ? sh : dh, ds, dl, out); break;
-        case 4: from_hsl(dh, ss, dl, out); break;
-        case 5: from_hsl(sh, ss, dl, out); break;
-        default: from_hsl(dh, ds, sl, out); break;
-        }
-    } else {
-        long sc[3] = { s[0], s[1], s[2] }, dc[3] = { d[0], d[1], d[2] }, t[3];
-        switch (mode) {
-        case 17:                                      /* hue */
-            t[0] = sc[0]; t[1] = sc[1]; t[2] = sc[2];
-            set_sat(t, sat(dc));
-            set_lum(t, lum(dc));
-            break;
-        case 18:                                      /* saturation */
-            t[0] = dc[0]; t[1] = dc[1]; t[2] = dc[2];
-            set_sat(t, sat(sc));
-            set_lum(t, lum(dc));
-            break;
-        case 19:                                      /* colour */
-            t[0] = sc[0]; t[1] = sc[1]; t[2] = sc[2];
-            set_lum(t, lum(dc));
-            break;
-        default:                                      /* lightness */
-            t[0] = dc[0]; t[1] = dc[1]; t[2] = dc[2];
-            set_lum(t, lum(sc));
-            break;
-        }
-        for (i = 0; i < 3; i++)
-            out[i] = (unsigned)t[i];
-    }
 }
 
 static int known_blend(unsigned mode)
@@ -800,7 +799,8 @@ static int known_blend(unsigned mode)
     return mode <= 20;
 }
 
-/* A stable per-pixel threshold for dissolve. */
+/* A stable per-pixel threshold for dissolve. Paint Shop Pro uses its own
+   fixed noise, which isn't reproduced. */
 static unsigned dissolve_noise(unsigned x, unsigned y)
 {
     uint32_t h = x * 0x9e3779b1u ^ (y + 0x7f4a7c15u) * 0x85ebca77u;
@@ -810,30 +810,100 @@ static unsigned dissolve_noise(unsigned x, unsigned y)
     return h % 255u;
 }
 
-/* Composite one pixel of colour s at coverage a (0..255) over d. */
-static void put_pixel(unsigned mode, const uint8_t *s, unsigned a, uint8_t *d,
-                      unsigned x, unsigned y)
+/* Normal mode, in integers: the plain "over" operator. */
+static void put_normal(const uint8_t *s, unsigned a, uint8_t *d)
 {
-    unsigned da = d[3], b[3], i;
+    unsigned da = d[3], i;
     uint32_t oa;
 
-    if (mode == 9) {                                  /* dissolve */
-        a = dissolve_noise(x, y) < a ? 255u : 0u;
-        mode = 0;
-    }
     if (a == 0)
         return;
-    if (mode == 0 || da == 0) {
-        b[0] = s[0]; b[1] = s[1]; b[2] = s[2];
-    } else {
-        blend_colour(mode, s, d, b);
-    }
     oa = a * 255u + da * (255u - a);
     for (i = 0; i < 3; i++) {
-        uint32_t num = a * (255u - da) * s[i] + a * da * b[i] + (255u - a) * da * d[i];
+        uint32_t num = a * 255u * s[i] + (255u - a) * da * d[i];
         d[i] = (uint8_t)((num + oa / 2u) / oa);
     }
     d[3] = (uint8_t)((oa + 127u) / 255u);
+}
+
+/* Composite one pixel of colour s, alpha a8 and opacity o8 (0..255) over d. */
+static void put_pixel(unsigned mode, const uint8_t *s8, unsigned a8, unsigned o8,
+                      uint8_t *d8, unsigned x, unsigned y)
+{
+    float a = a8 / 255.0f, o = o8 / 255.0f, da = d8[3] / 255.0f;
+    float ao = a * o, oa = ao + da * (1 - ao), s[3], d[3], b[3], col[3], w;
+    unsigned i;
+
+    if (mode == 0 || mode == 9) {
+        unsigned k = mul255(a8, o8);
+        if (mode == 9)
+            k = dissolve_noise(x, y) < k ? 255u : 0u;
+        put_normal(s8, k, d8);
+        return;
+    }
+    if (a8 == 0 || o8 == 0)
+        return;
+    for (i = 0; i < 3; i++) {
+        s[i] = s8[i];
+        d[i] = d8[i];
+    }
+    switch (mode) {
+    case 14:
+    case 15:
+        /* Dodge, and burn as dodge in inverted colours, against the
+           premultiplied colour below; opacity and alpha move the layer's
+           colour toward the neutral one. */
+        for (i = 0; i < 3; i++) {
+            float sv = mode == 15 ? 255 - s[i] : s[i], dv = mode == 15 ? 255 - d[i] : d[i];
+            float sn = sv * ao, dn = dv * da, v;
+            if (sn >= 255)
+                v = dn > 0 ? 255 : 0;
+            else {
+                v = round_f(dn * 255 / (255 - sn));
+                if (v > 255) v = 255;
+            }
+            v = v / oa;
+            if (v > 255) v = 255;
+            col[i] = mode == 15 ? 255 - v : v;
+        }
+        break;
+    case 13:
+        /* Difference: opacity moves the layer's colour toward black. */
+        for (i = 0; i < 3; i++) {
+            float sn = round_f(s[i] * o), bv = sn > d[i] ? sn - d[i] : d[i] - sn;
+            w = 1 - (1 - a) * (1 - ao);
+            col[i] = (ao * (1 - da) * s[i] + w * da * bv + (1 - w) * da * d[i]) / oa;
+        }
+        break;
+    case 12:
+        /* Soft light blends against the colour below faded toward grey. */
+        for (i = 0; i < 3; i++) {
+            float dg = round_f(128 + (d[i] - 128) * da);
+            col[i] = (ao * separable(12, s[i], dg) + (1 - ao) * da * d[i]) / oa;
+        }
+        break;
+    case 6: {
+        /* Legacy luminance: the luminance of the normal composite, given to
+           the colours mixed at the lower pixel's full alpha. */
+        float n[3], yv[3], k = ao * (1 - da) + da;
+        for (i = 0; i < 3; i++) {
+            n[i] = round_f((ao * s[i] + (1 - ao) * da * d[i]) / oa);
+            yv[i] = round_f((ao * (1 - da) * s[i] + da * d[i]) / k);
+        }
+        luminosity_blend(6, n, yv, col);
+        break;
+    }
+    default:
+        /* The other modes count the layer's transparency twice. */
+        blend_colour(mode, s, d, b);
+        w = ao * (1 + o * (1 - a));
+        for (i = 0; i < 3; i++)
+            col[i] = (ao * (1 - da) * s[i] + w * da * b[i] + (1 - w) * da * d[i]) / oa;
+        break;
+    }
+    for (i = 0; i < 3; i++)
+        d8[i] = (uint8_t)round_f(clamp255(col[i]));
+    d8[3] = (uint8_t)round_f(clamp255(oa * 255));
 }
 
 /* ---- compositing ---- */
@@ -883,6 +953,7 @@ static enum codec_result draw_raster(const struct context *c, const struct layer
     size_t n = (size_t)l->width * l->height;
     uint8_t *rgba, *mask = NULL;
     long x0, y0, x1, y1, x, y;
+    unsigned opacity;
     enum codec_result r;
 
     if (!known_blend(l->blend))
@@ -893,7 +964,10 @@ static enum codec_result draw_raster(const struct context *c, const struct layer
     y1 = l->y + (long)l->height;
     if (x1 > (long)canvas->width) x1 = canvas->width;
     if (y1 > (long)canvas->height) y1 = canvas->height;
-    if (n == 0 || l->opacity == 0)
+    /* Paint Shop Pro gives a layer with no transparency channel, as it
+       writes the background, no opacity in normal mode. */
+    opacity = l->blend == 0 && !l->trans.present ? 255u : l->opacity;
+    if (n == 0 || opacity == 0)
         return CODEC_OK;
     rgba = malloc(n * 4u);
     if (rgba == NULL)
@@ -907,10 +981,10 @@ static enum codec_result draw_raster(const struct context *c, const struct layer
     for (y = y0; r == CODEC_OK && y < y1; y++) {
         for (x = x0; x < x1; x++) {
             const uint8_t *s = rgba + ((size_t)(y - l->y) * l->width + (size_t)(x - l->x)) * 4u;
-            unsigned a = mul255(s[3], l->opacity);
+            unsigned a = s[3];
             if (mask != NULL)
                 a = mul255(a, mask_at(l, mask, x, y));
-            put_pixel(l->blend, s, a,
+            put_pixel(l->blend, s, a, opacity,
                       canvas->rgba + ((size_t)y * canvas->width + (size_t)x) * 4u,
                       (unsigned)x, (unsigned)y);
         }
@@ -951,7 +1025,7 @@ static void draw_group(const struct layer *l, const struct canvas *group,
     size_t i, n = (size_t)canvas->width * canvas->height;
     for (i = 0; i < n; i++) {
         const uint8_t *s = group->rgba + i * 4u;
-        put_pixel(l->blend, s, mul255(s[3], l->opacity), canvas->rgba + i * 4u,
+        put_pixel(l->blend, s, s[3], l->opacity, canvas->rgba + i * 4u,
                   (unsigned)(i % canvas->width), (unsigned)(i / canvas->width));
     }
 }

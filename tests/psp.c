@@ -479,12 +479,14 @@ static void test_transparency(void)
     psp_free(&image);
 
     /* Hidden and zero-opacity layers draw nothing. */
+    memset(trans, 255, sizeof trans);
     begin(6);
     image_block(2, 2, 24, 0, 3);
     open_bank();
     base = raster(2, 2, solid(2, 2, 1, 2, 3));
     layer(&base);
     top = raster(2, 2, solid(2, 2, 200, 200, 200));
+    top.trans = trans;
     top.visible = 0;
     layer(&top);
     top.visible = 1;
@@ -494,68 +496,92 @@ static void test_transparency(void)
     assert(decode(&image) == CODEC_OK);
     expect_pixel(&image, 1, 1, 1, 2, 3, 255);
     psp_free(&image);
-}
 
-static unsigned blended(unsigned mode, unsigned s, unsigned d)
-{
-    struct psp_image image;
-    struct tlayer base = raster(1, 1, NULL), top = raster(1, 1, NULL);
-    uint8_t b[3], t[3];
-    unsigned result;
-
-    b[0] = b[1] = b[2] = (uint8_t)d;
-    t[0] = t[1] = t[2] = (uint8_t)s;
-    base.colour = b;
-    base.plane_bytes = 1;
-    top.colour = t;
-    top.plane_bytes = 1;
-    top.blend = mode;
+    /* Paint Shop Pro ignores the opacity of a normal layer that has no
+       transparency channel, as it writes a background layer; other modes
+       still use it. */
+    top.trans = NULL;
+    top.opacity = 100;
     begin(6);
-    image_block(1, 1, 24, 0, 2);
+    image_block(2, 2, 24, 0, 2);
     open_bank();
     layer(&base);
     layer(&top);
     close_bank();
     assert(decode(&image) == CODEC_OK);
-    result = image.rgba[0];
-    assert(image.rgba[1] == result && image.rgba[3] == 255);
+    expect_pixel(&image, 1, 1, 200, 200, 200, 255);
     psp_free(&image);
-    return result;
+    top.blend = 2;
+    begin(6);
+    image_block(2, 2, 24, 0, 2);
+    open_bank();
+    layer(&base);
+    layer(&top);
+    close_bank();
+    assert(decode(&image) == CODEC_OK);
+    expect_pixel(&image, 1, 1, 79, 80, 80, 255);
+    psp_free(&image);
 }
 
+#include "psp_cases.h"
+
+/* Each case as a one-pixel, two-layer file, against Paint Shop Pro's own
+   result. Dodge and burn divide by small numbers near the ends of their
+   ranges, where rounding differs by more. */
 static void test_blend(void)
 {
     struct psp_image image;
     struct tlayer base, top;
-    uint8_t sr[3] = { 200, 30, 60 }, dr[3] = { 40, 160, 90 };
+    uint8_t lower[3], upper[3], lower_a, upper_a;
+    size_t k;
+    unsigned c;
 
-    assert(blended(0, 128, 200) == 128);
-    assert(blended(1, 128, 200) == 128);
-    assert(blended(2, 128, 200) == 200);
-    assert(blended(7, 128, 200) == 100);
-    assert(blended(8, 128, 200) == 228);
-    assert(blended(10, 100, 50) == 39);    /* overlay: by the lower layer */
-    assert(blended(10, 100, 200) == 188);
-    assert(blended(11, 100, 200) == 157);  /* hard light: by the layer */
-    assert(blended(13, 100, 200) == 100);
-    assert(blended(14, 128, 100) == 201);
-    assert(blended(14, 255, 100) == 255);
-    assert(blended(15, 128, 100) == 0);
-    assert(blended(15, 200, 100) == 57);
-    assert(blended(16, 128, 200) == 128);
-    assert(blended(12, 0, 100) < 100 && blended(12, 255, 100) > 100);
-    assert(blended(12, 128, 100) == 100);
-    /* Grey stays grey under the colour modes; dissolve is all or nothing. */
-    assert(blended(3, 50, 90) == 90 && blended(6, 50, 90) == 50);
-    assert(blended(20, 50, 90) == 50 && blended(19, 50, 90) == 90);
-    assert(blended(9, 50, 90) == 50);
+    for (k = 0; k < sizeof psp_cases / sizeof psp_cases[0]; k++) {
+        const struct psp_case *pc = &psp_cases[k];
+        unsigned tolerance = pc->mode == 14 || pc->mode == 15 ? 9 : 3;
+        for (c = 0; c < 3; c++) {
+            lower[c] = pc->lower[c];
+            upper[c] = pc->upper[c];
+        }
+        lower_a = pc->lower[3];
+        upper_a = pc->upper[3];
+        base = raster(1, 1, lower);
+        base.plane_bytes = 1;
+        if (pc->lower_trans)
+            base.trans = &lower_a;
+        top = raster(1, 1, upper);
+        top.plane_bytes = 1;
+        top.trans = &upper_a;
+        top.blend = pc->mode;
+        top.opacity = pc->opacity;
+        begin(5);
+        image_block(1, 1, 24, 0, 2);
+        open_bank();
+        layer(&base);
+        layer(&top);
+        close_bank();
+        assert(decode(&image) == CODEC_OK);
+        for (c = 0; c < 3; c++) {
+            unsigned v = image.rgba[c], want = pc->result[c];
+            if (pc->flattened)
+                v = (unsigned)((v * image.rgba[3] + 255u * (255u - image.rgba[3]) + 127u) / 255u);
+            if ((v > want ? v - want : want - v) > tolerance)
+                fprintf(stderr, "case %lu mode %u: channel %u is %u, Paint Shop Pro %u\n",
+                        (unsigned long)k, pc->mode, c, v, want);
+            assert((v > want ? v - want : want - v) <= tolerance);
+        }
+        psp_free(&image);
+    }
 
-    /* Colour modes keep one colour's components and take the other's. */
-    base = raster(1, 1, dr);
+    /* Dissolve shows the layer or the lower colour, never a mix. */
+    base = raster(1, 1, solid(1, 1, 10, 20, 30));
     base.plane_bytes = 1;
-    top = raster(1, 1, sr);
+    top = raster(1, 1, solid(1, 1, 200, 100, 50));
     top.plane_bytes = 1;
-    top.blend = 19;
+    upper_a = 255;
+    top.trans = &upper_a;
+    top.blend = 9;
+    top.opacity = 128;
     begin(6);
     image_block(1, 1, 24, 0, 2);
     open_bank();
@@ -563,12 +589,8 @@ static void test_blend(void)
     layer(&top);
     close_bank();
     assert(decode(&image) == CODEC_OK);
-    /* The lower colour's luminosity, about 116. */
-    {
-        long l = (image.rgba[0] * 77 + image.rgba[1] * 151 + image.rgba[2] * 28 + 128) >> 8;
-        assert(l >= 114 && l <= 118);
-        assert(image.rgba[0] > image.rgba[2] && image.rgba[2] > image.rgba[1]);
-    }
+    assert((image.rgba[0] == 10 && image.rgba[1] == 20) ||
+           (image.rgba[0] == 200 && image.rgba[1] == 100));
     psp_free(&image);
 
     /* An unknown mode is invalid. */
