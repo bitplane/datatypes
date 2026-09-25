@@ -184,9 +184,27 @@ Saves one image with no background: gray when every pixel is gray and opaque, RG
 
 ## ZX Spectrum screen
 
-Reads ZX Spectrum `SCREEN$` dumps: exactly 6912 bytes, the 6144-byte bitmap in the Spectrum's interleaved row order followed by 768 attribute bytes, one per 8×8 cell. They load as 256×192 pictures without the border. Colours use ImageMagick's levels, 0xC0 for normal and 0xFF for bright. Flashing cells show their first phase, ink on paper. Files shorter than 6912 bytes are truncated. Longer ones are other screen formats and are rejected. ImageMagick shows the first 6912 bytes of those, which gives the wrong picture. Not supported: ULA+ palettes (6976 bytes), Timex hi-colour and hi-res screens (12288 and 12289 bytes), two-screen Gigascreen or multicolour files, bitmap-only 6144-byte files and `+3DOS` headers.
-Saves a screen when the picture is 256×192 and, after compositing over white, uses only Spectrum colours with at most two per cell, both normal or both bright (black goes with either). Other pictures can't be saved, because the format can't hold them without loss. In a cell with two colours, the one with the lower colour number is paper.
-The package includes its `Devs/DataTypes/ZXSCR` descriptor. Screens have no magic number and any 6912 bytes are a valid screen, so the descriptor only requires 32 bytes of data and a `.scr` name, at priority -10. Windows screen savers also use `.scr`. The descriptor claims them too, but the loader rejects them because of their size.
+Reads ZX Spectrum screens and the extended screen formats built on them. The file size tells most of them apart; SXG and MultiArtist files have magic numbers.
+
+| Format | Size in bytes | Picture |
+|---|---|---|
+| `SCREEN$` (`.scr`) | 6912, or 6913 with a border colour, which isn't shown | 256×192, attributes per 8×8 cell |
+| Bitmap only (`.scr`) | 6144 | 256×192, black ink on white paper, as after `CLS` |
+| ULAplus (`.scr`) | 6976 | 256×192 with a 64-colour palette |
+| Timex hi-colour (`.scr`) | 12288 | 256×192, attributes per 8×1 span |
+| Timex hi-colour with ULAplus palette (`.scr`) | 12352 | as above, 64 colours |
+| Timex hi-res (`.scr`) | 12289 | 512×192 in two colours, rows doubled to 512×384 |
+| Multicolour 8×1 (`.mc` linear bitmap, `.mlt`) | 12288 | 256×192 |
+| IFL multicolour 8×2 (`.ifl`) | 9216 | 256×192 |
+| Border screen (`.bsc`), with 8×4 multicolour (`.bmc4`) | 11136, 11904 | 384×304 including the border |
+| Gigascreen (`.img`) | 13824 | 256×192, the average of two screens |
+| Hi-res Gigascreen (`.hrg`) | 24578 | 512×384, the average of two hi-res screens |
+| MultiArtist Gigascreen (`.mg1`, `.mg2`, `.mg4`, `.mg8`) | `MGH` header | 256×192, the average of two multicolour screens |
+| Speccy eXtended Graphics (`.sxg`) | `\x7FSXG` header | any size up to 16M pixels, 16 or 256 colours |
+
+A 12288-byte file is Timex hi-colour unless its name ends in `.mc` or `.mlt`. Colours use ImageMagick's levels, 0xC0 for normal and 0xFF for bright. Flashing cells show their first phase, ink on paper. ULAplus palettes follow the ULAplus specification: 3-bit levels, with blue's missing low bit set to the OR of its two stored bits. Border colours are never bright. Timex hi-res uses the bright ink selected by bits 3–5 of the last byte, and the complementary paper. Files shorter than 6912 bytes (other than 6144) are truncated, and other sizes are rejected. Not supported: packed SXG files, three-screen `.3` and `.rgb` tricolour files, `+3DOS` headers, attribute-only `.atr` files, and the other RECOIL ZX formats (`.bsp`, `.chx`, `.zxp`, `.sev` and so on).
+Saves a standard 6912-byte screen when the picture is 256×192 and, after compositing over white, uses only Spectrum colours with at most two per 8×8 cell, both normal or both bright (black goes with either). Otherwise it saves a 12288-byte Timex hi-colour screen if each 8×1 span meets the same rule. Other pictures can't be saved, because neither layout can hold them without loss. In a cell or span with two colours, the one with the lower colour number is paper.
+The package includes its `Devs/DataTypes/ZXSCR` descriptor. Most of these formats have no magic, so the descriptor only requires 16 bytes of data and one of the file name patterns above, at priority -11. That is one below the stock GEM IMG descriptor, so GEM `.img` files still go to the stock class. A Gigascreen `.img` whose bytes 0, 2, 4 and 6 are zero matches GEM's mask first and won't open. Windows screen savers also use `.scr`. The descriptor claims them too, but the loader rejects them because of their size.
 `formats/zxscr/ZXSCR.dtyp` is the compiled form of `ZXSCR.dtd`; regenerate it with AROS's `createdtdesc -o formats/zxscr/ZXSCR.dtyp formats/zxscr/ZXSCR.dtd` if the recognition rules change.
 
 ## CompuServe RLE
@@ -204,6 +222,15 @@ Not supported: DXT2 and DXT4 (premultiplied DXT3 and DXT5), BC4 signed, RXGB, YU
 
 Saves uncompressed DDS with one image and no mip levels: 24-bit RGB when every pixel is opaque, 32-bit ARGB otherwise.
 The package includes its `Devs/DataTypes/DDS` descriptor, which matches the `DDS ` magic and the 124-byte header size on files named `#?.dds`. `formats/dds/DDS.dtyp` is the compiled form of `DDS.dtd`; regenerate it with AROS's `createdtdesc -o formats/dds/DDS.dtyp formats/dds/DDS.dtd` if the recognition rules change.
+
+## FTEX
+
+Reads FTEX textures from Independence War 2 (`.ftc` compressed and `.ftu` uncompressed files). Formats can be DXT1 (BC1), whose three-colour blocks can be transparent, or 24-bit RGB. A file can hold several formats, each with its own chain of mip levels. They are separate pictures, counted in file order: each format in the directory in turn, then its mip levels from largest to smallest. Without `PDTA_WhichPicture` the first one loads, as in Pillow. Levels missing from the end of a file aren't counted, and a file whose first picture is cut short fails to load. A level may hold more bytes than its pixels need. A declared level count of 0 still reads the top level. Directory entries with other format numbers are skipped. Each picture can have at most 16M pixels.
+
+Only Pillow reads FTEX. ImageMagick and netpbm don't. The decoder matches Pillow pixel for pixel. Pillow also reads only the first picture, and it rejects files with more than one format.
+
+Saves an uncompressed (`.ftu`) file with one 24-bit RGB format and one mip level, compositing transparency over white.
+The package includes its `Devs/DataTypes/FTEX` descriptor, which matches the `FTEX` magic on files named `#?.ftc` or `#?.ftu`. `formats/ftex/FTEX.dtyp` is the compiled form of `FTEX.dtd`; regenerate it with AROS's `createdtdesc -o formats/ftex/FTEX.dtyp formats/ftex/FTEX.dtd` if the recognition rules change.
 
 ## Pixar
 
@@ -264,6 +291,56 @@ Saves 24-bit uncompressed Prism Paint (`.pnt`), the only lossless RGB variant am
 
 The package includes its `Devs/DataTypes/FALCON` descriptor. The formats share no magic number, so it matches only the file name (`#?.(god|tru|tg1|tcp|trp|pnt|tpi|dg1|dgu|dc1|pi4|pi5|pi6|pi7|pi9|ftc)`), and the decoder rejects anything else. Its priority is -11, below MacPaint's -10, so MacPaint's mask is checked first on `.pnt` files.
 `formats/falcon/FALCON.dtyp` is the compiled form of `FALCON.dtd`; regenerate it with AROS's `createdtdesc -o formats/falcon/FALCON.dtyp formats/falcon/FALCON.dtd` if the recognition rules change.
+## C64 picture
+
+Reads Commodore 64 bitmap pictures from paint programs and the demo scene, in the Pepto palette that RECOIL and VICE use. Multicolour pixels are shown two pixels wide, so pictures are 320×200. FLI pictures are 296×200 without the three character columns lost to the FLI bug, as RECOIL shows them. Interlaced pictures show the average of their two frames, the way they looked on a real screen.
+- Hires: Art Studio and Interpaint hires (`.art` `.aas` `.iph` `.hpi` `.hpc`), Doodle (`.dd` `.ddp`, packed `.jj`), Hires-Editor and Run Paint (`.het` `.rph` `.rpo`), Hi-Eddi and Image System (`.hed` `.ish`), plain hires bitmaps (`.hbm` `.hir`) and AFLI (`.afl`).
+- Multicolour: Koala Painter and its copies (`.koa` `.kla` `.gig` `.ipt` `.rpm` `.fpt`, packed `.gg`), Amica Paint (`.ami`), Advanced Art Studio (`.ocp` `.mpi`), Drazpaint (`.drz` `.drp`, packed or not), Blazing Paddles (`.pi` `.bpl`), Wigmore Artist 64 (`.a64` `.wig`), Rainbow Painter (`.rp`), Dolphin Ed and Vidcom 64 (`.dol` `.vid` `.vic`), Picasso 64 (`.p64`), CDU-Paint (`.cdu`), Cheese (`.che`), Image System (`.ism`), Saracen Paint (`.sar`), Paint Magic (`.pmg`) and uncompressed Micro Illustrator (`.mil`).
+- FLI: FLI Graph and FLI Designer (`.fli` `.fd2`), Blackmail FLI with a background per line (`.bml` `.flg`), FLI Editor (`.fed`) and Flimatic (`.flm`).
+- Interlaced: Drazlace (`.drl` `.dlp`, packed or not, including its one-pixel shift), True Paint (`.mci`), Fuckpaint (`.fp`), Gunpaint (`.gun` `.ifl`), Funpaint (`.fun` `.fp2`, packed or not), Flash FLI (`.ffli` `.ffl`), Hires Interlace (`.hlf` `.hie`), Hireslace (`.hle`), ECI (`.eci`, packed `.ecp`), Interlace Hires Editor (`.ihe`) and Vertical Hires Interlace (`.vhi`).
+
+The files have no magic, so the loader finds the format from the length, the load address in the first two bytes and any signature (Drazpaint, Drazlace, Funpaint, Flash FLI). The extension breaks ties between formats of the same length, such as 32770-byte ECI and Hireslace, or 8002-byte hires bitmaps and Run Paint. Without a deciding extension, the first format that fits the length and load address wins, then the first that fits the length. Packed formats with no signature (`.gg` `.jj` `.ami` `.ecp`) need their extension. A Koala file at `$6000` or `$4400` with up to 64 bytes of junk at the end, which is common in files copied off disk, loads as Koala. RECOIL runs those through its packed-Koala decoder instead and shows noise. RLE runs past the end of the picture are cut short. A packed stream that ends early, or a named file shorter than its format, is truncated.
+
+Not supported: MUFLI and MUIFLI (sprites under an FLI bitmap, documented only by RECOIL's code), Pixel Perfect (`.pp` is PowerPacker's extension on Amiga-family systems), packed Micro Illustrator, True Paint, Blackmail FLI, Flimatic and Hires Manager, Big FLI, Super Hires, NUFLI, UFLI, SHF and other sprite-based modes, character-set and PETSCII screens, sprite and font files, and GoDot. ImageMagick, Pillow and netpbm read none of these formats; RECOIL was the reference throughout.
+
+Saves a 320×200 picture whose pixels, composited over white, are all Pepto colours. A picture made of pixel pairs with at most three colours per 4×8 cell besides one shared background is saved as Koala Painter. Otherwise, one with at most two colours per 8×8 cell is saved as Art Studio hires. Anything else can't be saved without loss and fails with invalid data.
+The package includes its `Devs/DataTypes/C64` descriptor. With no magic to match, it requires two bytes of data and one of the extensions above, at priority -10. To fit `createdtdesc`'s 256-byte line, the pattern leaves out a few rare alternative extensions (`.lre` `.hre` `.cwg` `.fly` `.fgs` `.gih` `.bed` `.mpic` `.gcd` `.mon`), whose formats load under their main extensions. `.art` is also used by Atari ST Art Director.
+`formats/c64/C64.dtyp` is the compiled form of `C64.dtd`; regenerate it with AROS's `createdtdesc -o formats/c64/C64.dtyp formats/c64/C64.dtd` if the recognition rules change.
+
+## BLP
+
+Reads Blizzard BLP textures from Warcraft III (BLP1) and World of Warcraft (BLP2). Palettized images have 8-bit indices into a 256-colour BGRA palette, and a separate 1, 4 or 8-bit alpha channel when the header declares one. BLP2 files can also be DXT1, DXT3 or DXT5 compressed, or uncompressed BGRA. Alpha counts only when the header's alpha depth is nonzero, and DXT1 blocks are then transparent where the block says so. Two quirks of Pillow's writer are accepted: it declares alpha in palettized files but keeps it in the palette's fourth byte instead of an alpha channel, and in BLP1 files it records the pixel offset 8 bytes too early.
+
+Mip levels are separate pictures, largest first. Without `PDTA_WhichPicture` the full-size image loads, and `PDTA_GetNumPictures` returns the number of levels present in the file. Each picture can have at most 16M pixels.
+
+Not supported: JPEG-compressed BLP1 and BLP2, which is how most Warcraft III textures are stored (it needs a JPEG decoder that handles Blizzard's 4-channel JPEG), and BLP0, which keeps its mip levels in separate `.b00` to `.b15` files.
+
+Saves BLP2 with one level: palettized when the image has at most 256 distinct colours, uncompressed BGRA otherwise, with an 8-bit alpha channel when any pixel isn't opaque.
+The package includes its `Devs/DataTypes/BLP` descriptor, which matches the `BLP` magic on files named `#?.blp`. `formats/blp/BLP.dtyp` is the compiled form of `BLP.dtd`; regenerate it with AROS's `createdtdesc -o formats/blp/BLP.dtyp formats/blp/BLP.dtd` if the recognition rules change.
+
+## Amiga icons
+
+Reads Workbench `.info` icons, in every form an icon keeps its images in:
+
+- **Planar images** (OS 1.x to 3.1), of any depth. The file holds no colours, so pens take Workbench's defaults: the OS 1.3 blue, white, black and orange for revision 0 icons, as netpbm shows them; the OS 2 grey, black, white and blue for later ones; MagicWB's eight colours for images that reach pens 4 to 7; and for deeper images, AROS's default screen palette at the image's depth, which adds red, green, dark blue and yellow as the last four pens and the pointer's reds as pens 17 to 19, with the other pens black. Most 8-plane icons use just those pens; 4- to 6-plane sets that shipped their own palette show their other pens black, as AROS draws them. Pen 0 is opaque, as Workbench draws it. PlanePick and PlaneOnOff are applied, so a selected image with PlanePick 0 is a solid PlaneOnOff pen, as `DrawImage` draws it.
+- **NewIcons** held in `IM1=` and `IM2=` tooltypes after the `*** DON'T EDIT THE FOLLOWING LINES!! ***` line, with pen 0 transparent when the header says so.
+- **OS 3.5 colour icons** ("GlowIcons"): `IMAG` chunks in the `FORM ICON` after the icon, packed or raw, with a packed or raw palette, or reusing the first image's palette, and a transparent pen when flagged.
+- **ARGB images**: zlib `ARGB` chunks written by AROS, MorphOS and OS4 icon tools. The stored packed size is ignored in favour of the zlib stream's own end, because AROS stores the size and the others store it less one.
+
+A file holds up to eight images: normal and selected images of each kind. `PDTA_WhichPicture` picks one by its position in the file, and `PDTA_GetNumPictures` reports how many there are. Otherwise the image Workbench would show loads: ARGB before OS 3.5, then NewIcons, then planar, and the normal image before the selected one. Revision 0 drawers that carry DrawerData2 anyway, as some early Workbench 2 icons do, still find their `FORM ICON`.
+
+**Not supported:**
+
+- **PNG icons** (OS4 and MorphOS `.info` files that are PNG files). The stock PNG class opens them, showing the first image.
+- **`png ` chunks inside a `FORM ICON`.** They are skipped.
+
+Tooltypes, positions, drawer windows and the frame and aspect flags are ignored.
+
+Saves a project icon: a two-plane image in the OS 2 pens for old Workbenches, then a `FORM ICON` holding the picture itself. That is a packed OS 3.5 palette image when the picture has at most 256 colours and every pixel is fully opaque or fully transparent, and a zlib `ARGB` image otherwise. The colour of fully transparent pixels isn't kept. OS 3.5 images are at most 256 pixels a side, so larger pictures can't be saved.
+
+The package includes its `Devs/DataTypes/INFO` descriptor, which matches the `0xE310` magic and version 1 on files named `#?.info`, so GNU texinfo files with the same extension aren't claimed.
+`formats/info/INFO.dtyp` is the compiled form of `INFO.dtd`; regenerate it with AROS's `createdtdesc -o formats/info/INFO.dtyp formats/info/INFO.dtd` if the recognition rules change.
+
 
 ## AVS and AAI
 

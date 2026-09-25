@@ -1,0 +1,8 @@
+Name=BLP
+BaseName=blp
+Pattern=#?.blp
+Mask='B' 'L' 'P'
+GroupID=pict
+ID=_blp
+Flags=DTF_BINARY,DTF_CASE
+Priority=0

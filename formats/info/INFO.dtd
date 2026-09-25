@@ -1,0 +1,8 @@
+Name=INFO
+BaseName=info
+Pattern=#?.info
+Mask=0xe3 0x10 0x00 0x01
+GroupID=pict
+ID=info
+Flags=DTF_BINARY
+Priority=0

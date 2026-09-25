@@ -16,10 +16,6 @@
 #include "decode.h"
 #include "encode.h"
 
-/* Fixed-size screens are at most 24578 bytes. SXG pictures are a header,
-   a palette and up to ZXSCR_MAX_PIXELS bytes of pixels. */
-#define MAX_ZXSCR_FILE ((LONG)ZXSCR_MAX_PIXELS + 1024L)
-
 ADD2LIBS((const UBYTE *)"datatypes/picture.datatype", 0, struct Library *, PictureBase);
 
 struct collector {
@@ -27,24 +23,25 @@ struct collector {
     ULONG row;
 };
 
-static LONG load_zxscr(Class *cl, Object *obj)
+static LONG load_c64(Class *cl, Object *obj)
 {
-    struct zxscr_image image;
+    struct c64_image image;
     STRPTR name = NULL;
     UBYTE *input;
     LONG size, error;
 
-    error = dt_read_file(obj, 1, MAX_ZXSCR_FILE, &input, &size);
+    error = dt_read_file(obj, 2, C64_MAX_FILE, &input, &size);
     if (error != 0 || input == NULL)
         return error;
-    /* Only the name tells 8x1 multicolour from Timex hi-colour. */
+    /* The extension only breaks ties between formats of the same size. */
     GetDTAttrs(obj, DTA_Name, &name, TAG_END);
-    error = dt_error(zxscr_decode(input, (size_t)size, zxscr_name_kind((const char *)name), &image));
+    error = dt_error(c64_decode(input, (size_t)size,
+                                name != NULL ? (const char *)FilePart(name) : NULL, &image));
     FreeVec(input);
     if (error != 0)
         return error;
     error = dt_put_rgba(cl, obj, image.rgba, image.width, image.height);
-    zxscr_free(&image);
+    c64_free(&image);
     if (error == 0)
         dt_set_name(obj);
     return error;
@@ -57,16 +54,15 @@ static BOOL collect_row(void *state, const UBYTE *rgba, ULONG width)
     return TRUE;
 }
 
-IPTR Zxscr__OM_NEW(Class *cl, Object *obj, struct opSet *msg)
+IPTR C64__OM_NEW(Class *cl, Object *obj, struct opSet *msg)
 {
-    return dt_new(cl, obj, msg, load_zxscr);
+    return dt_new(cl, obj, msg, load_c64);
 }
 
-IPTR Zxscr__DTM_WRITE(Class *cl, Object *obj, struct dtWrite *msg)
+IPTR C64__DTM_WRITE(Class *cl, Object *obj, struct dtWrite *msg)
 {
     struct collector c;
     UBYTE *output;
-    size_t length;
     ULONG width, height;
     IPTR success = FALSE;
 
@@ -75,19 +71,20 @@ IPTR Zxscr__DTM_WRITE(Class *cl, Object *obj, struct dtWrite *msg)
     /* MultiView probes RAW support without opening an output file. */
     if (msg->dtw_FileHandle == BNULL)
         return TRUE;
-    /* Only a whole 256x192 screen can be saved; check before allocating. */
+    /* Only a whole 320x200 screen can be saved; check before allocating. */
     if (!dt_picture_size(obj, &width, &height) ||
-        width != ZXSCR_WIDTH || height != ZXSCR_HEIGHT) {
+        width != C64_WIDTH || height != C64_HEIGHT) {
         SetIoErr(DTERROR_INVALID_DATA);
         return FALSE;
     }
     c.rgba = AllocVec(width * height * 4u, MEMF_ANY);
-    output = AllocVec(ZXSCR_TIMEX_SIZE, MEMF_ANY);
+    output = AllocVec(C64_ENCODE_MAX, MEMF_ANY);
     c.row = 0;
     if (c.rgba != NULL && output != NULL && dt_each_row(cl, obj, collect_row, &c)) {
-        LONG error = dt_error(zxscr_encode(c.rgba, width, height, output, &length));
+        size_t size;
+        LONG error = dt_error(c64_encode(c.rgba, width, height, output, &size));
         if (error == 0)
-            success = dt_write(msg->dtw_FileHandle, output, (LONG)length);
+            success = dt_write(msg->dtw_FileHandle, output, (LONG)size);
         else
             SetIoErr(error);
     }
