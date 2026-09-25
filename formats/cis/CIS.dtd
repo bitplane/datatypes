@@ -1,0 +1,8 @@
+Name=CompuServe RLE
+BaseName=cis
+Pattern=#?.(rle|cis)
+Mask=0x1b 0x47
+GroupID=pict
+ID=cisr
+Flags=DTF_BINARY,DTF_CASE
+Priority=0

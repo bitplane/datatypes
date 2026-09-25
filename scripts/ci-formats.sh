@@ -50,7 +50,7 @@ while IFS= read -r -d '' path; do
             format=${path#tests/}
             selected+=("${format%.c}")
             ;;
-        README.md|LICENSE*|.gitignore|docs/*)
+        README.md|LICENSE*|.gitignore|docs/*|.claude/skills/*)
             ;;
         *)
             # Shared code, build scripts, or an unclassified file may affect all formats.
