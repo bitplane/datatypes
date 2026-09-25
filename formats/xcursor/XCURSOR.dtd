@@ -1,0 +1,8 @@
+Name=Xcursor
+BaseName=xcursor
+Pattern=#?
+Mask='X' 'c' 'u' 'r'
+GroupID=pict
+ID=xcur
+Flags=DTF_BINARY,DTF_CASE
+Priority=0

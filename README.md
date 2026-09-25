@@ -125,6 +125,12 @@ Saves raw Group 3 MH at the picture's own width, bits first-to-last, with an EOL
 The package includes its `Devs/DataTypes/FAX` descriptor. Raw G3 has no magic number and CALS starts with text, so the one descriptor matches files named `.g3`, `.fax`, `.cal`, `.cals` or `.ct1`, at priority -10.
 `formats/fax/FAX.dtyp` is the compiled form of `FAX.dtd`; regenerate it with AROS's `createdtdesc -o formats/fax/FAX.dtyp formats/fax/FAX.dtd` if the recognition rules change.
 
+## Xcursor
+
+Reads X11 cursor files, as shipped in cursor themes on Linux desktops. Each image is 32-bit ARGB with premultiplied alpha. It loads as straight alpha, converted the way GIMP converts it, and the alpha channel is always kept. A file holds several images: nominal sizes, and animation frames within each size. `PDTA_WhichPicture` picks one by its position among the image entries in the table of contents, and `PDTA_GetNumPictures` reports how many there are. Otherwise the largest image loads, and the first of several equally large frames. Comments and unknown chunk types are skipped. Hotspots and frame delays are ignored, and a hotspot outside the image, which libXcursor rejects, doesn't stop the file loading. As in libXcursor, the file fails to load if any image entry is damaged or truncated, or if a side is over 32767 pixels.
+Saves a one-image cursor with its hotspot at the top left and its larger side as the nominal size. Colours are premultiplied, so semi-transparent pixels lose some precision and fully transparent ones lose their colour. The package includes its `Devs/DataTypes/XCURSOR` descriptor, which matches the `Xcur` magic whatever the file is called, since theme cursors have no extension.
+`formats/xcursor/XCURSOR.dtyp` is the compiled form of `XCURSOR.dtd`; regenerate it with AROS's `createdtdesc -o formats/xcursor/XCURSOR.dtyp formats/xcursor/XCURSOR.dtd` if the recognition rules change.
+
 ## Build and test
 
 ```sh
