@@ -1,0 +1,7 @@
+Name=Photo CD
+BaseName=pcd
+Pattern=#?.pcd
+GroupID=pict
+ID=pcd_
+Flags=DTF_BINARY
+Priority=-10
