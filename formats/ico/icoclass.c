@@ -10,13 +10,13 @@
 #include <proto/exec.h>
 #include <proto/utility.h>
 
-#include <stdio.h>
 #include <string.h>
 
+#include "common/dtembed.h"
 #include "common/dtfile.h"
 #include "common/dtpicture.h"
-#include "decode.h"
-#include "encode.h"
+#include "common/ico.h"
+#include "common/icoenc.h"
 
 #define MAX_ICO_FILE (128L * 1024L * 1024L)
 
@@ -33,76 +33,13 @@ struct collector {
     ULONG y;
 };
 
-/* AROS datatypes can only load files, so a PNG entry goes through a file in T:,
-   as AROS's amigaguide class does for embedded objects. */
-static LONG load_png(const UBYTE *data, const struct ico_entry *entry,
-                     struct ico_image *image)
-{
-    static ULONG serial;
-    char name[64];
-    struct BitMapHeader *header = NULL;
-    Object *png;
-    BPTR file;
-    BOOL written;
-    LONG error = 0;
-    ULONG width, height;
-
-    snprintf(name, sizeof name, "T:ico_%lx_%lu.png",
-             (unsigned long)(IPTR)FindTask(NULL), (unsigned long)++serial);
-    file = Open((CONST_STRPTR)name, MODE_NEWFILE);
-    if (file == BNULL)
-        return IoErr() != 0 ? IoErr() : DTERROR_COULDNT_OPEN;
-    written = dt_write(file, data + entry->offset, (LONG)entry->size);
-    if (!Close(file))
-        written = FALSE;
-    png = written ? NewDTObject((APTR)name,
-                                DTA_SourceType, DTST_FILE,
-                                DTA_GroupID, GID_PICTURE,
-                                PDTA_Remap, FALSE,
-                                PDTA_DestMode, PMODE_V43,
-                                TAG_END)
-                  : NULL;
-    if (png == NULL) {
-        error = IoErr() != 0 ? IoErr() : DTERROR_INVALID_DATA;
-        DeleteFile((CONST_STRPTR)name);
-        return error;
-    }
-    GetDTAttrs(png, PDTA_BitMapHeader, &header, TAG_END);
-    if (header == NULL || header->bmh_Width == 0 || header->bmh_Height == 0) {
-        error = DTERROR_INVALID_DATA;
-    } else {
-        width = header->bmh_Width;
-        height = header->bmh_Height;
-        if (width > ICO_MAX_SIDE || height > ICO_MAX_SIDE ||
-            (uint64_t)width * height > ICO_MAX_PIXELS) {
-            error = DTERROR_INVALID_DATA;
-        } else {
-            image->rgba = AllocVec((size_t)width * height * 4u, MEMF_ANY);
-            if (image->rgba == NULL)
-                error = ERROR_NO_FREE_STORE;
-            else if (!DoMethod(png, PDTM_READPIXELARRAY, (IPTR)image->rgba,
-                               PBPAFMT_RGBA, width * 4u, 0, 0, width, height))
-                error = DTERROR_INVALID_DATA;
-            if (error == 0) {
-                image->width = width;
-                image->height = height;
-            } else if (image->rgba != NULL) {
-                FreeVec(image->rgba);
-                image->rgba = NULL;
-            }
-        }
-    }
-    DisposeDTObject(png);
-    DeleteFile((CONST_STRPTR)name);
-    return error;
-}
-
 static LONG load_ico(Class *cl, Object *obj, const struct request *request)
 {
     struct ico_entry entry;
     struct ico_image image;
     Point grab;
     UBYTE *input;
+    ULONG width, height;
     LONG size, error;
     unsigned count = 0, index = 0;
     int cursor = 0;
@@ -126,9 +63,10 @@ static LONG load_ico(Class *cl, Object *obj, const struct request *request)
     }
     if (error == 0) {
         if (entry.png) {
-            error = load_png(input, &entry, &image);
+            error = dt_load_embedded(input + entry.offset, (ULONG)entry.size, "png",
+                                     &image.rgba, &width, &height);
             if (error == 0) {
-                error = dt_put_rgba(cl, obj, image.rgba, image.width, image.height);
+                error = dt_put_rgba(cl, obj, image.rgba, width, height);
                 FreeVec(image.rgba);
             }
         } else {

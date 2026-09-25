@@ -1,5 +1,5 @@
-#include "../formats/ico/decode.h"
-#include "../formats/ico/encode.h"
+#include "../common/ico.h"
+#include "../common/icoenc.h"
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>

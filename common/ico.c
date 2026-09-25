@@ -1,4 +1,4 @@
-#include "decode.h"
+#include "common/ico.h"
 #include <stdlib.h>
 #include <string.h>
 
