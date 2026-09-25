@@ -58,7 +58,7 @@ The package includes its `Devs/DataTypes/XPM` descriptor. The three XPM versions
 
 Reads Netpbm PAM (`P7`) and the float maps PFM (`PF` colour, `Pf` gray, `PF4` RGBA) and PHM (`PH`, `Ph`, half floats). PAM covers the tuple types `BLACKANDWHITE`, `GRAYSCALE`, `RGB` and `CMYK`, each with or without `_ALPHA`, at any maxval up to 65535. Samples scale to 8 bits with netpbm's rounding, and values above maxval are clamped. Without a known tuple type, one or two planes load as gray and three or more as RGB. Alpha is only used when the tuple type declares it, including alpha that is zero everywhere. Float maps are linear light: samples are clamped to 0–1 and encoded with the sRGB curve, and alpha is kept linear. The sign of the scale gives the byte order. Its size is ignored. A file can hold several images, one after another (PAM and float maps may be mixed). `PDTA_WhichPicture` picks one, and `PDTA_GetNumPictures` reports how many there are. Saves 8-bit PAM as `GRAYSCALE` when every pixel is gray and `RGB` otherwise, adding alpha (`_ALPHA`) when pixels have transparency.
 Not supported: PNM images (`P1`–`P6`, left to AROS's `pnm` class, including inside a PAM stream), XV thumbnails (`P7 332`), and float map headers with comments or CRLF line ends, which the reference tools also reject or misread.
-The package includes its `Devs/DataTypes/PAM` descriptor. It matches `P` followed by two bytes, at priority -1, so AROS's PNM descriptors (priority 0) still take `P1`–`P6`. This also recognises `PF4`; unrelated matches are rejected by the decoder. `formats/pam/PAM.dtyp` is the compiled form of `PAM.dtd`; regenerate it with AROS's `createdtdesc -o formats/pam/PAM.dtyp formats/pam/PAM.dtd` if the recognition rules change.
+The package includes its `Devs/DataTypes/PAM` descriptor. It matches `.pam`, `.pfm` and `.phm` names beginning with `P`, at priority -1, so AROS's PNM descriptors (priority 0) still take `P1`–`P6`. This also recognises `PF4`; other formats beginning with `P` are left to their own descriptors. `formats/pam/PAM.dtyp` is the compiled form of `PAM.dtd`; regenerate it with AROS's `createdtdesc -o formats/pam/PAM.dtyp formats/pam/PAM.dtd` if the recognition rules change.
 
 ## XWD
 
@@ -255,6 +255,42 @@ Reads X11 cursor files, as shipped in cursor themes on Linux desktops. Each imag
 Saves a one-image cursor with its hotspot at the top left and its larger side as the nominal size. Colours are premultiplied, so semi-transparent pixels lose some precision and fully transparent ones lose their colour. The package includes its `Devs/DataTypes/XCURSOR` descriptor, which matches the `Xcur` magic whatever the file is called, since theme cursors have no extension.
 `formats/xcursor/XCURSOR.dtyp` is the compiled form of `XCURSOR.dtd`; regenerate it with AROS's `createdtdesc -o formats/xcursor/XCURSOR.dtyp formats/xcursor/XCURSOR.dtd` if the recognition rules change.
 
+## Atari Falcon and TT
+
+Reads the Atari Falcon and TT paint formats:
+
+- **True colour (RGB565):** GodPaint `.god`, IndyPaint `.tru`, EggPaint and Spooky Sprites `.trp`, COKE `.tg1`, Rembrandt `.tcp`, and 384×240 Falcon screen dumps `.ftc`.
+- **Prism Paint and TruePaint** `.pnt`/`.tpi`: 1, 2, 4 and 8 bitplanes with a VDI palette, 16-bit and 24-bit, each uncompressed or PackBits-packed.
+- **DuneGraph:** `.dg1`, and `.dc1` with any of its four packing methods.
+- **Fuckpaint** `.pi4`/`.pi7`/`.pi9`: 320×200, 320×240 and 640×480 with 256 colours.
+- **DEGAS files in TT modes:** `.pi4` (320×480, 256 colours), `.pi5` (640×480, 16 colours) and `.pi6` (1280×960, black on white).
+
+The class identifies the format by content, not by name. It checks the ID for the formats that have one. The rest are recognised by exact file size, and for TT DEGAS the resolution word as well.
+
+How colours are scaled:
+
+- RGB565 channels repeat their top bits into the low ones.
+- Falcon palette entries have 6 bits per gun, repeated the same way, so `$FC` is full brightness.
+- TT palette entries have 4 bits per gun.
+- VDI levels (0–1000) are rounded to 8 bits, and values above 1000 are clamped.
+
+Pixels load as stored, without correcting their shape. TT low resolution and ST medium resolution pictures therefore look squeezed, as they do in AROS's DEGAS class.
+
+A Rembrandt file can hold several pictures. `PDTA_WhichPicture` picks one, and `PDTA_GetNumPictures` reports how many there are.
+
+DuneGraph's packer stops once only zeros are left, so `.dc1` data past the stored packed size is zero. A file shorter than its packed size is truncated.
+
+Unsupported:
+
+- Rembrandt's compression flag, which was never implemented.
+- ICE-packed EggPaint files.
+- The `st.pi5` kind of 320×240 ST picture in a DEGAS file.
+- Other Atari 8-bit `.pi9` pictures.
+
+Saves 24-bit uncompressed Prism Paint (`.pnt`), the only lossless RGB variant among these formats, compositing transparency over white.
+
+The package includes its `Devs/DataTypes/FALCON` descriptor. The formats share no magic number, so it matches only the file name (`#?.(god|tru|tg1|tcp|trp|pnt|tpi|dg1|dgu|dc1|pi4|pi5|pi6|pi7|pi9|ftc)`), and the decoder rejects anything else. Its priority is -11, below MacPaint's -10, so MacPaint's mask is checked first on `.pnt` files.
+`formats/falcon/FALCON.dtyp` is the compiled form of `FALCON.dtd`; regenerate it with AROS's `createdtdesc -o formats/falcon/FALCON.dtyp formats/falcon/FALCON.dtd` if the recognition rules change.
 ## C64 picture
 
 Reads Commodore 64 bitmap pictures from paint programs and the demo scene, in the Pepto palette that RECOIL and VICE use. Multicolour pixels are shown two pixels wide, so pictures are 320×200. FLI pictures are 296×200 without the three character columns lost to the FLI bug, as RECOIL shows them. Interlaced pictures show the average of their two frames, the way they looked on a real screen.
@@ -304,6 +340,7 @@ Saves a project icon: a two-plane image in the OS 2 pens for old Workbenches, th
 
 The package includes its `Devs/DataTypes/INFO` descriptor, which matches the `0xE310` magic and version 1 on files named `#?.info`, so GNU texinfo files with the same extension aren't claimed.
 `formats/info/INFO.dtyp` is the compiled form of `INFO.dtd`; regenerate it with AROS's `createdtdesc -o formats/info/INFO.dtyp formats/info/INFO.dtd` if the recognition rules change.
+
 
 ## AVS and AAI
 
