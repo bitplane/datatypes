@@ -10,6 +10,11 @@ Reads colour-mapped, true-colour and grayscale TGA files, including RLE images. 
 
 Reads packed and planar indexed PCX, 8-bit indexed PCX, and 24-bit RGB PCX. Saves 24-bit RGB PCX, compositing transparency over white. AROS's `Devs/DataTypes/PCX` descriptor selects the class.
 
+## DCX
+
+Reads DCX (multi-page PCX) files: a directory of up to 1024 page offsets, each pointing to a PCX image. Pages can be 1, 2 or 4-bit packed, 1-bit planar with 2 to 4 planes, 8-bit indexed or gray, 24-bit RGB, or 32-bit RGBA with its alpha kept. Each 8-bit page uses the palette at the end of that page. Odd bytes per line, as ImageMagick and netpbm write them, are accepted. 1-bit pages whose two palette colours are equal load black and white, and pages without a palette use netpbm's default colours. `PDTA_WhichPicture` picks a page in directory order, the first by default, and `PDTA_GetNumPictures` returns the page count. Saves a one-page DCX holding a 24-bit RGB PCX, compositing transparency over white, with the full 1024-entry directory ImageMagick writes. Other depth and plane combinations, such as 16-bit or 2-bit planar pages, are rejected.
+The package includes its `Devs/DataTypes/DCX` descriptor, which recognises files by their `B1 68 DE 3A` magic whatever their name. `formats/dcx/DCX.dtyp` is the compiled form of `DCX.dtd`; regenerate it with AROS's `createdtdesc -o formats/dcx/DCX.dtyp formats/dcx/DCX.dtd` if the recognition rules change.
+
 ## QOI
 
 Reads and saves QOI RGB and RGBA images. The package includes its `Devs/DataTypes/QOI` descriptor.
@@ -70,6 +75,64 @@ Doesn't read RLE, JPEG or PNG compression inside BMP entries, or top-down BMP en
 Saves an icon with one BMP entry: 24-bit when every pixel is opaque, 32-bit with alpha otherwise. The AND mask marks fully transparent pixels. A grab point other than 0,0 saves a cursor with that hotspot instead. Images up to 256×256 can be saved.
 The package includes its `Devs/DataTypes/ICO` descriptor, which matches the `00 00 ?? 00` header on files named `#?.ico` or `#?.cur`, at priority -10, because the header alone is too weak to identify a file.
 `formats/ico/ICO.dtyp` is the compiled form of `ICO.dtd`; regenerate it with AROS's `createdtdesc -o formats/ico/ICO.dtyp formats/ico/ICO.dtd` if the recognition rules change.
+## Palm bitmap
+
+Reads Palm OS bitmaps, versions 0 to 3: 1, 2, 4 and 8-bit indexed, and 16-bit RGB565 direct colour, uncompressed or with scanline, RLE or PackBits compression. Indexed bitmaps use their colour table when they have one; otherwise 1, 2 and 4-bit bitmaps are gray from white to black and 8-bit ones use the Palm system palette. ImageMagick flags its 1, 2 and 4-bit bitmaps as having a colour table without writing one, so at those depths the flag counts only when a table of at most 2^depth entries is actually there. The transparent index or colour becomes transparent when the header flags it, even if it covers the whole image. A file holding a bitmap family (several depths or densities chained together, with or without the high-density separator) is a multi-image picture: `PDTA_WhichPicture` picks a bitmap in file order, `PDTA_GetNumPictures` reports how many there are, and by default the largest, then deepest, bitmap loads. Little-endian (`indexedLE`, `rgb565LE`) version 3 bitmaps and direct colour other than 5:6:5 are rejected.
+Saves an uncompressed 8-bit bitmap with a colour table when the image has at most 256 colours, which is lossless, and a 16-bit RGB565 bitmap otherwise. Fully transparent pixels become the transparent colour; partly transparent ones are composited over white.
+The package includes its `Devs/DataTypes/PALM` descriptor. Palm bitmaps have no magic number, so it matches files named `#?.palm` of at least 16 bytes, at priority -10. `formats/palm/PALM.dtyp` is the compiled form of `PALM.dtd`; regenerate it with AROS's `createdtdesc -o formats/palm/PALM.dtyp formats/palm/PALM.dtd` if the recognition rules change.
+## OTB
+
+Reads Nokia OTA bitmaps (`.otb`), the 1-bit format of operator logos and picture messages, with set bits in black. Handles 8-bit and 16-bit sizes and skips extension fields. It ignores the external palette flag and any bytes after the image. Animated bitmaps hold up to 16 pictures: `PDTA_WhichPicture` selects one, the first by default, and `PDTA_GetNumPictures` reports how many there are. The specification packs rows without padding, but ImageMagick pads each row to a byte. The class reads a file as padded when it is long enough to be, and as packed otherwise. Widths that are a multiple of 8, including the usual 72, are the same either way. Saves one-picture OTB with rows padded to a byte, as ImageMagick reads it, and 8-bit sizes when both fit. Pixels are composited over white, then set black if their luminance is below half. Doesn't read compressed bitmaps (the specification never defined the scheme), more than one colour plane, or OTA bitmaps stored as hex text. The package includes its `Devs/DataTypes/OTB` descriptor. OTB has no magic number, so the descriptor requires a `.otb` name and has priority -10.
+`formats/otb/OTB.dtyp` is the compiled form of `OTB.dtd`; regenerate it with AROS's `createdtdesc -o formats/otb/OTB.dtyp formats/otb/OTB.dtd` if the recognition rules change.
+
+## MSP
+
+Reads Microsoft Paint images from Windows 1 (`DanM`, uncompressed) and Windows 2 (`LinS`, run-length encoded by row). Images load as one-plane pictures, black and white. The header checksum isn't checked. In version 2 files, a row whose packed size is zero, or whose runs stop short, is white to its end, and a run past the end of its row is cut off. Saves version 1 files: pixels are composited over white, then set white if their luminance is at least half. The package includes its `Devs/DataTypes/MSP` descriptor. The two versions' keys share only their third byte, `n`, so the descriptor matches that byte and requires a `.msp` name.
+`formats/msp/MSP.dtyp` is the compiled form of `MSP.dtd`; regenerate it with AROS's `createdtdesc -o formats/msp/MSP.dtyp formats/msp/MSP.dtd` if the recognition rules change.
+
+## NEOchrome
+
+Reads Atari ST NEOchrome `.neo` pictures in all three screen modes: low resolution (320×200, 16 colours), medium (640×200, 4 colours) and high (640×400, black on white). ST palettes use 3 bits per gun, scaled as netpbm scales them. A palette counts as STE, with 4 bits per gun, when one of the colours the mode uses has a fourth bit set; colours the mode doesn't use often hold junk, so they are ignored. Colour-cycling data and bytes after the image are ignored. Files whose flag word isn't zero or whose resolution isn't 0–2 are rejected. Saves NEOchrome when the picture is one of the three screen sizes and, after compositing over white, fits that mode's palette exactly with ST or STE levels. Other pictures can't be saved, because the format can't hold them without loss. The package includes its `Devs/DataTypes/NEO` descriptor. NEOchrome has no magic number, so the descriptor matches the zero flag word and the high byte of the resolution, requires a `.neo` name, and has priority -10.
+`formats/neo/NEO.dtyp` is the compiled form of `NEO.dtd`; regenerate it with AROS's `createdtdesc -o formats/neo/NEO.dtyp formats/neo/NEO.dtd` if the recognition rules change.
+
+## XV thumbnail
+
+Reads XV thumbnails, the `P7 332` files XV, GIMP 1.x and makexvpics keep in `.xvpics` directories: 8-bit 3:3:2 RGB, expanded as `v * 255 / max` rounded down, as Pillow and netpbm do. Comment lines are skipped with or without `#END_OF_COMMENTS`, and the size line's maxval may be left out, but when present it must be 255. Saves XV thumbnails at the image's own size: pixels are composited over white, then each channel takes the nearest of the eight (or four, for blue) levels, as netpbm's `pamtoxvmini` does. There is no dithering, and the image is not scaled down to XV's 80×60. The package includes its `Devs/DataTypes/XVTHUMB` descriptor, which recognises files by their `P7 332` magic whatever their name.
+`formats/xvthumb/XVTHUMB.dtyp` is the compiled form of `XVTHUMB.dtd`; regenerate it with AROS's `createdtdesc -o formats/xvthumb/XVTHUMB.dtyp formats/xvthumb/XVTHUMB.dtd` if the recognition rules change.
+
+## TIM
+
+Reads PlayStation TIM textures: 4-bit and 8-bit indexed, 16-bit 5:5:5 and 24-bit RGB. Indexed images use the first palette of their CLUT; entries missing from a short CLUT are black, and images without a CLUT (whose palette lives elsewhere in VRAM) load as grayscale. A CLUT in a 16-bit or 24-bit file is skipped. Images load opaque: the STP bit and transparent black are rendering modes of the PlayStation GPU, not alpha stored in the file. Several TIMs stored back to back in one file are separate pictures, selected with `PDTA_WhichPicture`. Mixed-mode (frame buffer) TIMs are not supported. Saves 24-bit TIM, compositing transparency over white. The package includes its `Devs/DataTypes/TIM` descriptor, which matches the `10 00 00 00` ID and the zero reserved flag bytes on files named `.tim`.
+`formats/tim/TIM.dtyp` is the compiled form of `TIM.dtd`; regenerate it with AROS's `createdtdesc -o formats/tim/TIM.dtyp formats/tim/TIM.dtd` if the recognition rules change.
+
+## ICNS
+
+Reads Apple icon files: PNG entries in any PNG colour type and bit depth, interlaced or not; 24-bit icons, packed or uncompressed, with their 8-bit masks (`is32`, `il32`, `ih32`, `it32`, and `icp4`/`icp5` holding the same data); ARGB entries (`ic04`, `ic05`, `icsb`); and classic 1-, 4- and 8-bit icons with their 1-bit masks, in the Mac OS system palettes. JPEG 2000 entries are unsupported and skipped, so a file holding only JPEG 2000 doesn't load. Nested icon sets (dark mode, template, selected) are ignored. 16-bit PNG channels are rounded to 8 bits, and explicit alpha is preserved even when it is zero everywhere. PNG data is inflated by `z1.library`.
+A file holds several images. `PDTA_WhichPicture` picks one by its position among the loadable entries, in file order, and `PDTA_GetNumPictures` reports how many there are. Otherwise the largest image loads, then the deepest, and a 1x entry is preferred to a 2x entry of the same pixel size.
+Saves a one-image ICNS file when the picture is square: 24-bit packed with an 8-bit mask at 16, 32, 48 and 128 pixels, and PNG at 64, 256, 512 and 1024 pixels. Other sizes can't be saved. The package includes its `Devs/DataTypes/ICNS` descriptor, which matches the `icns` magic on files named `#?.icns`.
+`formats/icns/ICNS.dtyp` is the compiled form of `ICNS.dtd`; regenerate it with AROS's `createdtdesc -o formats/icns/ICNS.dtyp formats/icns/ICNS.dtd` if the recognition rules change.
+
+## MGR
+
+Reads 1-bit bitmaps from the MGR window system, with set bits in black: the current `yz` layout with depth 1 and rows padded to 8 bits, and the older `zz` and `xz` layouts padded to 16 and 32 bits. Sides are up to 4095, as the header encodes them. Bytes after the image are ignored. Saves `yz` with depth 1, as MGR and netpbm write it. Pixels are composited over white, then set black if their luminance is below half. Doesn't read colour MGR pixmaps (`yz` with depth 8, or `zy`). They index the MGR server's palette, which the file doesn't carry, and netpbm rejects them too. The package includes its `Devs/DataTypes/MGR` descriptor. MGR files usually have no extension, so it matches on content only: `yz`, then the depth byte for 1 (`!`), at priority -1. The decoder reads old `zz` and `xz` files, but the descriptor doesn't recognise them, so MultiView won't open them yet: a descriptor has one mask, and their two-byte magic is too weak to match on alone. Only one of the 367 files in MGR 0.69 uses an old layout.
+`formats/mgr/MGR.dtyp` is the compiled form of `MGR.dtd`; regenerate it with AROS's `createdtdesc -o formats/mgr/MGR.dtyp formats/mgr/MGR.dtd` if the recognition rules change.
+
+## CMU Window Manager
+
+Reads CMU window manager (Andrew Toolkit) bitmaps, where a clear bit is black and rows are padded to a byte. Both byte orders load: the magic `F1 00 40 BB` means big-endian, as netpbm reads it, and `BB 40 00 F1` means little-endian. As in the Andrew Toolkit's reader, the header is 14 bytes, or 16 when the file has at least two bytes more than a 14-byte header needs. The depth must be 1, read as 16 bits, or as 32 bits in a 16-byte header. Saves the big-endian 14-byte form, as netpbm and the Andrew Toolkit write it. Pixels are composited over white, then set black if their luminance is below half. The package includes its `Devs/DataTypes/CMUWM` descriptor. It matches the big-endian magic at priority 0. The decoder reads little-endian files, but the descriptor doesn't recognise them, because a package ships one descriptor with one mask.
+`formats/cmuwm/CMUWM.dtyp` is the compiled form of `CMUWM.dtd`; regenerate it with AROS's `createdtdesc -o formats/cmuwm/CMUWM.dtyp formats/cmuwm/CMUWM.dtd` if the recognition rules change.
+## FAX
+
+Reads raw CCITT Group 3 fax files with one-dimensional (MH) coding, and CALS type 1 rasters, whose 2048-byte text header is followed by Group 4 (T.6) data. Images load as one-plane pictures, black on white.
+
+- **Group 3:** bits may be stored first-to-last (as T.4 sends them) or last-to-first (as many modems save them); the loader works out which. The image is as wide as its longest line, and shorter lines are padded with white. Anything before the first EOL is skipped, the page ends at RTC or at the end of the data, and an empty line mid-page is a white row. Like `g3topbm`, a line with a bad code keeps the part that decoded and the page carries on from the next EOL, so received faxes with line noise still load. Only the first page of a file with several is shown.
+- **CALS:** `rpelcnt` gives the size and `rorient` the orientation, which is applied as MIL-PRF-28002 describes it: the pel path and line progression angles, counter-clockwise.
+- **Not supported:** Group 3 two-dimensional (MR) coding, raw Group 4 files (they don't record their width), CALS type 2 (tiled) rasters, and the Digifax header some fax software adds.
+
+Saves raw Group 3 MH at the picture's own width, bits first-to-last, with an EOL before each line and RTC at the end. Pixels are composited over white, then set black if their luminance is under half. Fax machines expect 1728-pixel lines, so pad the picture to that width first if the file is to be sent.
+
+The package includes its `Devs/DataTypes/FAX` descriptor. Raw G3 has no magic number and CALS starts with text, so the one descriptor matches files named `.g3`, `.fax`, `.cal`, `.cals` or `.ct1`, at priority -10.
+`formats/fax/FAX.dtyp` is the compiled form of `FAX.dtd`; regenerate it with AROS's `createdtdesc -o formats/fax/FAX.dtyp formats/fax/FAX.dtd` if the recognition rules change.
 
 ## Build and test
 
