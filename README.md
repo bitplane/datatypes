@@ -35,6 +35,7 @@ In the Descriptor column, "AROS" means AROS already ships the `Devs/DataTypes` d
 | [MacPaint](formats/macpaint/) | `.mac` `.macp` `.pntg` `.pnt` | Version 0 | ours |
 | [MGR](formats/mgr/) | none | 1-bit `yz` bitmap | ours |
 | [MSP](formats/msp/) | `.msp` | Windows 1 | ours |
+| [MSX screens](formats/msx/) | `.sc2` `.sc5` `.sc7` `.sc8` `.sca` `.scc` `.sr7` and more | Screen 5, 7 or 8 | ours |
 | [MTV and QRT](formats/mtv/) | `.mtv` `.pic` `.qrt` `.dis` | One MTV image | ours |
 | [NEOchrome](formats/neo/) | `.neo` | ST screens that fit exactly | ours |
 | [OTB](formats/otb/) | `.otb` | 1-bit, one picture | ours |
