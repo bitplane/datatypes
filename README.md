@@ -221,6 +221,35 @@ Reads X11 cursor files, as shipped in cursor themes on Linux desktops. Each imag
 Saves a one-image cursor with its hotspot at the top left and its larger side as the nominal size. Colours are premultiplied, so semi-transparent pixels lose some precision and fully transparent ones lose their colour. The package includes its `Devs/DataTypes/XCURSOR` descriptor, which matches the `Xcur` magic whatever the file is called, since theme cursors have no extension.
 `formats/xcursor/XCURSOR.dtyp` is the compiled form of `XCURSOR.dtd`; regenerate it with AROS's `createdtdesc -o formats/xcursor/XCURSOR.dtyp formats/xcursor/XCURSOR.dtd` if the recognition rules change.
 
+## Atari ST screens
+
+Reads Atari ST screen dumps from painting and digitiser programs, one class for all of them:
+
+| Extension | Program | Picture |
+|---|---|---|
+| `.art` | Art Director (32512 bytes), GFA Artist (32032), MonoSTar and The ArtiST (32000) | 320×200×16, or 640×400 mono |
+| `.doo` | Doodle | 640×400 mono |
+| `.bil` | ColorSTar (GFA Artist or low resolution DEGAS layout) | 320×200×16 |
+| `.ssb` | Sinbad Slideshow | 320×200×16 |
+| `.srt` | Synthetic Arts | 640×200×4 |
+| `.da4` | PaintShop | 640×800 mono |
+| `.kid` | Fullscreen Construction Kit | 448×274×16 overscan |
+| `.rgb` | RGB Intermediate (three pictures, one per gun) | 320×200, 4096 colours |
+| `.sd0`–`.sd2` | Dali, uncompressed | low, medium or high by extension |
+| `.sc0`–`.sc2`, `.cl0`–`.cl2`, `.pg0`–`.pg2` | Paintworks screens, clips and double-height pages, raw or run-length | all three modes; pages are 320×400, 640×400 or 640×800 |
+| `.pg1`–`.pg3` | Graphics Processor, raw or run-length | all three modes |
+| `.eza` | EZ-Art Professional (PackBits) | 320×200×16 |
+| `.ce1`–`.ce3` | ComputerEyes | 320×200 18-bit RGB, 640×200 15-bit RGB, 640×400 grey |
+
+Most of these formats have no magic number, so the class takes the extension from the file name to choose which to try. Only Dali needs it for more than that: its files don't record their resolution. Palettes are read the same way as NEOchrome's: 3 bits per gun, or 4 on the STE when a colour the mode uses has the fourth bit set. Medium resolution stays 640×200, and high resolution is black on white, whatever the palette says. ComputerEyes levels are bit-replicated to 8 bits. The grey mode's 0–191 sums are scaled by 4/3, as RECOIL does. Bytes after the picture are ignored.
+
+Not supported: compressed Dali (`.lpk`, `.mpk`, `.hpk`), Pablo, CrackArt, Tiny, Imagic and other compressed formats; multi-palette pictures (GFA Artist's 34360-byte variant, Palette Master, HighresMedium); ColorSTar objects and pictures with separate palette files. None of ImageMagick, Pillow or netpbm reads these formats. The decoder matches RECOIL pixel for pixel, apart from RECOIL doubling medium resolution lines for aspect.
+
+Saves uncompressed Paintworks: 320×200 (16 colours, `.sc0`), 640×200 (4, `.sc1`), 640×400 (black and white `.sc2`, otherwise a 4-colour `.pg1` page), 320×400 (`.pg0`) and 640×800 (black and white `.pg2`). The picture must fit the mode's palette exactly with ST or STE levels once composited over white. Other pictures can't be saved, because the format can't hold them without loss.
+
+The package includes its `Devs/DataTypes/STSCREEN` descriptor. There is no magic that all these formats share, so it matches on the extensions above only, requires at least 32 bytes, and has priority -10, like WBMP. SGI files named `.rgb` still go to the SGI class by their magic.
+`formats/stscreen/STSCREEN.dtyp` is the compiled form of `STSCREEN.dtd`; regenerate it with AROS's `createdtdesc -o formats/stscreen/STSCREEN.dtyp formats/stscreen/STSCREEN.dtd` if the recognition rules change.
+
 ## Build and test
 
 ```sh
