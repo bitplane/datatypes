@@ -1,4 +1,4 @@
-#include "encode.h"
+#include "common/icoenc.h"
 #include <string.h>
 
 #define HEADER_SIZE (6u + 16u + 40u)

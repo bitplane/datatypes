@@ -41,6 +41,10 @@ while IFS= read -r -d '' path; do
                 fi
             done
             ;;
+        common/ico.c|common/ico.h|common/icoenc.c|common/icoenc.h|common/dtembed.c|common/dtembed.h)
+            # These helpers are used by ANI and ICO. Keep their SDK checks together.
+            selected+=(ani ico)
+            ;;
         Makefile|CLAUDE.md|scripts/ci-formats.sh|scripts/aros/package.sh)
             # The decoder job covers host build changes; these do not alter SDK builds.
             ;;

@@ -8,6 +8,7 @@ In the Descriptor column, "AROS" means AROS already ships the `Devs/DataTypes` d
 |---|---|---|---|
 | [Alias/Wavefront RLA and PIX](formats/alias/) | `.rla` `.pix` `.als` `.alias` | 8-bit RLA | ours |
 | [Amiga icons](formats/info/) | `.info` | Project icon | ours |
+| [ANI](formats/ani/) | `.ani` | One-frame cursor | ours |
 | [Atari Falcon and TT](formats/falcon/) | `.god` `.tru` `.trp` `.tcp` `.pnt` `.tpi` `.dc1` `.pi4` and more | 24-bit Prism Paint | ours |
 | [Atari ST compressed paint](formats/stpaint/) | `.tny` `.ca1` `.ic1` `.pac` `.lpk` `.ppp` `.cp3` `.psc` and more | Tiny | ours |
 | [Atari ST multi-palette](formats/stmulti/) | `.mpp` `.pcs` | Nothing | ours |
