@@ -221,6 +221,17 @@ Reads X11 cursor files, as shipped in cursor themes on Linux desktops. Each imag
 Saves a one-image cursor with its hotspot at the top left and its larger side as the nominal size. Colours are premultiplied, so semi-transparent pixels lose some precision and fully transparent ones lose their colour. The package includes its `Devs/DataTypes/XCURSOR` descriptor, which matches the `Xcur` magic whatever the file is called, since theme cursors have no extension.
 `formats/xcursor/XCURSOR.dtyp` is the compiled form of `XCURSOR.dtd`; regenerate it with AROS's `createdtdesc -o formats/xcursor/XCURSOR.dtyp formats/xcursor/XCURSOR.dtd` if the recognition rules change.
 
+## BLP
+
+Reads Blizzard BLP textures from Warcraft III (BLP1) and World of Warcraft (BLP2). Palettized images have 8-bit indices into a 256-colour BGRA palette, and a separate 1, 4 or 8-bit alpha channel when the header declares one. BLP2 files can also be DXT1, DXT3 or DXT5 compressed, or uncompressed BGRA. Alpha counts only when the header's alpha depth is nonzero, and DXT1 blocks are then transparent where the block says so. Two quirks of Pillow's writer are accepted: it declares alpha in palettized files but keeps it in the palette's fourth byte instead of an alpha channel, and in BLP1 files it records the pixel offset 8 bytes too early.
+
+Mip levels are separate pictures, largest first. Without `PDTA_WhichPicture` the full-size image loads, and `PDTA_GetNumPictures` returns the number of levels present in the file. Each picture can have at most 16M pixels.
+
+Not supported: JPEG-compressed BLP1 and BLP2, which is how most Warcraft III textures are stored (it needs a JPEG decoder that handles Blizzard's 4-channel JPEG), and BLP0, which keeps its mip levels in separate `.b00` to `.b15` files.
+
+Saves BLP2 with one level: palettized when the image has at most 256 distinct colours, uncompressed BGRA otherwise, with an 8-bit alpha channel when any pixel isn't opaque.
+The package includes its `Devs/DataTypes/BLP` descriptor, which matches the `BLP` magic on files named `#?.blp`. `formats/blp/BLP.dtyp` is the compiled form of `BLP.dtd`; regenerate it with AROS's `createdtdesc -o formats/blp/BLP.dtyp formats/blp/BLP.dtd` if the recognition rules change.
+
 ## Build and test
 
 ```sh
