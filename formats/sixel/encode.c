@@ -362,7 +362,7 @@ static char *put_uint(char *out, unsigned long n)
     return out;
 }
 
-size_t sixel_encoder_header(const struct sixel_encoder *e, char *out, size_t capacity)
+size_t sixel_encoder_header(struct sixel_encoder *e, char *out, size_t capacity)
 {
     char *p = out;
     unsigned reg, i;
@@ -385,6 +385,7 @@ size_t sixel_encoder_header(const struct sixel_encoder *e, char *out, size_t cap
             p = put_uint(p, e->palette[reg][i]);
         }
     }
+    e->written = (unsigned long)(p - out);
     return (size_t)(p - out);
 }
 
@@ -427,15 +428,31 @@ int sixel_encoder_add_row(struct sixel_encoder *e, const uint8_t *rgba)
     return e->band_rows == 6 || e->rows == e->height;
 }
 
-static char *put_run(char *p, unsigned ch, unsigned long count)
+/* ImageMagick stops reading at a repeat count larger than the whole file,
+   so no count exceeds what is already written: out holds the current
+   piece, which starts after e->written bytes. Splitting keeps a run no
+   longer than its pixel count. */
+static char *put_run(const struct sixel_encoder *e, const char *out, char *p,
+                     unsigned ch, unsigned long count)
 {
-    if (count >= 4) {
-        *p++ = '!';
-        p = put_uint(p, count);
-        *p++ = (char)ch;
-    } else {
-        while (count-- > 0)
+    unsigned long n, limit;
+
+    while (count > 0) {
+        limit = e->written + (unsigned long)(p - out);
+        n = count < limit ? count : limit;
+        if (n >= 4) {
+            *p++ = '!';
+            p = put_uint(p, n);
             *p++ = (char)ch;
+        } else {
+            n = count < 4 ? count : 1;
+            while (n-- > 0) {
+                *p++ = (char)ch;
+                count--;
+            }
+            continue;
+        }
+        count -= n;
     }
     return p;
 }
@@ -462,12 +479,13 @@ size_t sixel_encoder_next(struct sixel_encoder *e, char *out, size_t capacity)
         if (e->lines > 0)
             return 0;
         *p++ = '-';
+        e->written++;
         return 1;
     }
     *p++ = '#';
     p = put_uint(p, reg);
     if (e->first[reg] > 0)
-        p = put_run(p, '?', e->first[reg]);
+        p = put_run(e, out, p, '?', e->first[reg]);
     for (x = e->first[reg]; x <= e->last[reg]; x++) {
         bits = 0;
         for (k = 0; k < e->band_rows; k++)
@@ -475,13 +493,13 @@ size_t sixel_encoder_next(struct sixel_encoder *e, char *out, size_t capacity)
                 bits |= 1u << k;
         ch = 0x3fu + bits;
         if (run > 0 && ch != run_ch) {
-            p = put_run(p, run_ch, run);
+            p = put_run(e, out, p, run_ch, run);
             run = 0;
         }
         run_ch = ch;
         run++;
     }
-    p = put_run(p, run_ch, run);
+    p = put_run(e, out, p, run_ch, run);
     e->cursor = reg + 1;
     e->lines++;
     /* Carriage return between colours, line feed after the last. */
@@ -490,6 +508,7 @@ size_t sixel_encoder_next(struct sixel_encoder *e, char *out, size_t capacity)
     *p++ = more ? '$' : '-';
     if (!more)
         e->cursor = e->colors;
+    e->written += (unsigned long)(p - out);
     return (size_t)(p - out);
 }
 

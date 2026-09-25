@@ -17,6 +17,7 @@ struct sixel_table;
 struct sixel_encoder {
     unsigned width, height, rows, band_rows, colors, cursor, lines;
     int transparent, quantised;
+    unsigned long written;       /* bytes of output so far */
     struct sixel_table *table;   /* exact colours while there are few */
     uint32_t *histogram;         /* per 15-bit bin: count, r, g, b sums */
     uint8_t *bin_color;          /* per 15-bit bin: register */
@@ -32,7 +33,7 @@ enum codec_result sixel_encoder_scan(struct sixel_encoder *e, const uint8_t *rgb
 enum codec_result sixel_encoder_plan(struct sixel_encoder *e);
 /* The DCS introducer, raster attributes and colour registers. 0 if out
    is too small. */
-size_t sixel_encoder_header(const struct sixel_encoder *e, char *out, size_t capacity);
+size_t sixel_encoder_header(struct sixel_encoder *e, char *out, size_t capacity);
 /* Second pass: every row, top down. Returns 1 when a band of six rows (or
    the last, shorter band) is ready for sixel_encoder_next. */
 int sixel_encoder_add_row(struct sixel_encoder *e, const uint8_t *rgba);

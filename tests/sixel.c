@@ -345,6 +345,21 @@ static char *encode(const uint8_t *rgba, unsigned width, unsigned height,
     return out;
 }
 
+/* Every repeat count is at most its offset in the file. */
+static void expect_short_repeats(const char *file, size_t length)
+{
+    size_t i;
+    unsigned long n;
+
+    for (i = 0; i < length; i++) {
+        if (file[i] != '!')
+            continue;
+        for (n = 0; i + 1 < length && file[i + 1] >= '0' && file[i + 1] <= '9'; i++)
+            n = n * 10u + (unsigned long)(file[i + 1] - '0');
+        assert(n >= 4 && n <= i);
+    }
+}
+
 static uint8_t level(uint8_t c)
 {
     unsigned p = (c * 100u + 127u) / 255u;
@@ -366,6 +381,7 @@ static void round_trip(const uint8_t *rgba, unsigned width, unsigned height,
     sixel_encoder_free(&e);
     assert(memcmp(file, transparent ? "\033P0;1;0q\"1;1;" : "\033P0;0;0q\"1;1;", 13) == 0);
     assert(sixel_count((const uint8_t *)file, length) == 1);
+    expect_short_repeats(file, length);
     assert(sixel_decode((const uint8_t *)file, length, 0, &image) == CODEC_OK);
     assert(image.width == width && image.height == height);
     for (i = 0; i < (size_t)width * height; i++) {
@@ -407,11 +423,14 @@ static void test_encoder(void)
             }
         round_trip(rgba, 7, n, 0, 7u * (n < 13 ? n : 13u));
     }
-    /* One wide colour is written as a repeat. */
+    /* One wide colour is written as repeats, none longer than the file
+       so far, since ImageMagick stops at those. */
     memset(rgba, 0x80, 300 * 4);
     file = encode(rgba, 300, 1, &length, &e);
     sixel_encoder_free(&e);
-    assert(strstr(file, "#0!300@-") != NULL);
+    assert(strstr(file, "#0!") != NULL);
+    assert(length < 80);
+    expect_short_repeats(file, length);
     free(file);
     round_trip(rgba, 300, 1, 0, 1);
     round_trip(rgba, 1, 1, 0, 1);
