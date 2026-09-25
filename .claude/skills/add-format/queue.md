@@ -23,16 +23,21 @@ Stock AROS classes (don't add these): BMP, GIF, ILBM, JPEG, PNG, PNM (P1–P6), 
 | 11 | FTEX | `ftex` | Civilization texture wrapper around DXT1 or raw data. Pillow. **Blocked** until DDS is merged. |
 | 12 | Pixar PXR | `pixar` | Simple raster. Pillow. |
 | 13 | AVS and AAI | `avs` | Trivial ARGB (AVS) and RGBA (AAI Dune) rasters. IM. |
-| 14 | Amiga icons | `info` | `.info` files: OS 1.3 planar images, NewIcons, GlowIcons (OS 3.5 colour chunks) and PNG icons. Normal and selected images are multi-image. |
-| 15 | Lunapaint | `lunapaint` | AROS ships a descriptor (`Lunapaint_v1` in UTF-16) but no class. A layered project format: composite every layer the way Lunapaint does, or don't ship. Lunapaint is open source; read it to understand the format, but don't port it. |
-| 16 | PSD and PSB | `psd` | Photoshop's stored composite image. RLE; CMYK, Lab and 16-bit need converting. Reject files whose composite isn't usable (saved without "maximise compatibility") rather than showing it blank. Read-only. |
-| 17 | OpenRaster and Krita | `ora` | Zip archives whose spec requires `mergedimage.png`, the full composite. Needs zip reading (`common/zlib`) and PNG decoding; ICNS has a PNG decoder, which becomes shared code once this is its second user. |
-| 18 | XCF | `xcf` | GIMP. Full compositing only: layers, masks, blend modes and groups. |
-| 19 | Photo CD | `pcd` | Every resolution, including the Huffman-coded higher ones; the largest is the default image. |
-| 20 | BLP | `blp` | Blizzard textures. BLP2 uses DDS's BC compression. **Blocked** until DDS is merged. |
-| 21 | IFF variants | ? | DEEP, RGBN/RGB8, ACBM, PBM and 24-bit ILBM. Check first which ones AROS's stock ILBM class reads; only add what it doesn't. |
-| 22 | Compressed Degas | ? | PC1–PC3. Check first whether AROS's stock Degas class reads them; if it does, drop this entry. |
-| 23 | GIMP brush and pattern | `gimp` | GBR (grayscale or RGBA) and PAT; one class, two descriptors. Niche. |
-| 24 | AVIF | `avif` | AROS ships a descriptor but no class. **Blocked:** needs AV1 decoding. 8-bit SDR only. |
+| 14 | X cursors (Xcursor) | `xcursor` | ARGB images at several sizes per file, multi-image: default to the largest. Every Linux desktop ships them. |
+| 15 | KISS CEL | `kisscel` | Paper-doll cels: 4 and 8-bit with a separate KCF palette file, or 32-bit RGBA. When the palette file is missing, do what GIMP does. |
+| 16 | Amiga icons | `info` | `.info` files: OS 1.3 planar images, NewIcons, GlowIcons (OS 3.5 colour chunks) and PNG icons. Normal and selected images are multi-image. |
+| 17 | Lunapaint | `lunapaint` | AROS ships a descriptor (`Lunapaint_v1` in UTF-16) but no class. A layered project format: composite every layer the way Lunapaint does, or don't ship. Lunapaint is open source; read it to understand the format, but don't port it. |
+| 18 | PSD and PSB | `psd` | Photoshop's stored composite image. RLE; CMYK, Lab and 16-bit need converting. Reject files whose composite isn't usable (saved without "maximise compatibility") rather than showing it blank. Read-only. |
+| 19 | OpenRaster and Krita | `ora` | Zip archives whose spec requires `mergedimage.png`, the full composite. Needs zip reading (`common/zlib`) and PNG decoding; ICNS has a PNG decoder, which becomes shared code once this is its second user. |
+| 20 | XCF | `xcf` | GIMP. Full compositing only: layers, masks, blend modes and groups. |
+| 21 | Paint Shop Pro | `psp` | PSP 3 and later. Layered, so full compositing only: layers, masks, blend modes, groups and vector layers' rasterised form where stored. |
+| 22 | Photo CD | `pcd` | Every resolution, including the Huffman-coded higher ones; the largest is the default image. |
+| 23 | BLP | `blp` | Blizzard textures. BLP2 uses DDS's BC compression. **Blocked** until DDS is merged. |
+| 24 | IFF variants | ? | DEEP, RGBN/RGB8, ACBM, PBM and 24-bit ILBM. Check first which ones AROS's stock ILBM class reads; only add what it doesn't. |
+| 25 | Compressed Degas | ? | PC1–PC3. Check first whether AROS's stock Degas class reads them; if it does, drop this entry. |
+| 26 | GIMP brushes and patterns | `gimp` | GBR (grayscale or RGBA), GIH brush pipes (a sequence of GBR brushes, so multi-image) and PAT; one class, several descriptors. Niche. |
+| 27 | PowerVR textures | `pvr` | PVR v3 container: uncompressed and ETC1/ETC2 first; PVRTC is harder. Mipmaps and faces are multi-image. |
+| 28 | Arma textures | `paa` | Bohemia Interactive PAA: DXT1–DXT5 and uncompressed variants. **Blocked** until DDS is merged. |
+| 29 | AVIF | `avif` | AROS ships a descriptor but no class. **Blocked:** needs AV1 decoding. 8-bit SDR only. |
 
 Not queued: animation formats (FLI/FLC, MNG) need `animation.datatype` rules the skill doesn't cover. Out of scope under **Fit**: HDR, FITS, DPX and Cineon, VICAR, PICT, SVG, MIFF, HRZ, and large-library formats (JPEG 2000, JPEG-LS, JPEG XR, camera RAW, EXR, WMF/EMF, EPS/PDF).
