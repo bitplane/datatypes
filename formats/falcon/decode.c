@@ -70,7 +70,8 @@ enum falcon_format falcon_identify(const uint8_t *data, size_t length)
     if (length == FTC_SIZE)
         return FALCON_FTC;
     /* GodPaint's ID word varies and the program ignores it, so only the
-       size tells. It comes last: the sizes above are all odd pixel counts. */
+       size tells. It comes after the fixed sizes, which as GodPaint files
+       would need odd pixel counts; the ones seen are screen sized. */
     if (length > 6) {
         uint64_t pixels = (uint64_t)be16(data + 2) * be16(data + 4);
         if (pixels != 0 && 6u + pixels * 2u == length)
