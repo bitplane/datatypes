@@ -1287,6 +1287,18 @@ static void test_limits(void)
     close_bank();
     assert(decode(&image) == CODEC_INVALID);
 
+    /* Off-canvas coordinates near the 32-bit limits must not wrap into view. */
+    l.x = 2147483646L;
+    begin(6);
+    image_block(2, 2, 24, 0, 1);
+    open_bank();
+    layer(&l);
+    close_bank();
+    assert(decode(&image) == CODEC_OK);
+    expect_pixel(&image, 0, 0, 0, 0, 0, 0);
+    psp_free(&image);
+    l.x = 0;
+
     /* A layer rectangle that is inside out, or far too big. */
     begin(6);
     image_block(2, 2, 24, 0, 1);
@@ -1297,6 +1309,10 @@ static void test_limits(void)
         /* The saved rectangle's right edge, in the only layer. */
         size_t at = 36 + 10 + 46 + 10 + 10 + 4 + 2 + 5 + 1 + 16 + 8;
         assert(psp_le32(file + at) == 5);
+        psp_put32(file + at - 8, 0x80000000u);
+        psp_put32(file + at, 0x7fffffffu);
+        assert(decode(&image) == CODEC_INVALID);
+        psp_put32(file + at - 8, 3);
         psp_put32(file + at, 1);
         assert(decode(&image) == CODEC_INVALID);
         psp_put32(file + at, 3);

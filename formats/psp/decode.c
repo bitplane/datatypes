@@ -47,9 +47,9 @@ struct attrs {
 
 struct layer {
     unsigned type, opacity, blend, visible;
-    long x, y;                 /* canvas position of the saved rectangle */
+    int64_t x, y;              /* canvas position of the saved rectangle */
     unsigned width, height;    /* the saved rectangle */
-    long mask_x, mask_y;
+    int64_t mask_x, mask_y;
     unsigned mask_width, mask_height, mask_disabled, mask_invert;
     unsigned long children;    /* group layers */
     struct channel colour[4];  /* by channel type: 0 single, 1-3 RGB */
@@ -468,23 +468,23 @@ static enum codec_result read_composite(const struct file *f, const struct block
 
 /* ---- layers ---- */
 
-static long le32s(const uint8_t *p)
+static int64_t le32s(const uint8_t *p)
 {
     uint32_t v = psp_le32(p);
-    return v & 0x80000000u ? -(long)(0xffffffffu - v) - 1 : (long)v;
+    return v & 0x80000000u ? -(int64_t)(0xffffffffu - v) - 1 : (int64_t)v;
 }
 
 /* Rectangles are left, top, right, bottom. The saved rectangle lies within
    the image (or mask) rectangle and is relative to its corner. */
 static enum codec_result read_rects(const uint8_t *outer, const uint8_t *saved,
-                                    long *x, long *y, unsigned *width,
+                                    int64_t *x, int64_t *y, unsigned *width,
                                     unsigned *height)
 {
-    long left = le32s(saved), top = le32s(saved + 4);
-    long right = le32s(saved + 8), bottom = le32s(saved + 12);
+    int64_t left = le32s(saved), top = le32s(saved + 4);
+    int64_t right = le32s(saved + 8), bottom = le32s(saved + 12);
 
     if (right < left || bottom < top ||
-        right - left > (long)PSP_MAX_SIDE * 2 || bottom - top > (long)PSP_MAX_SIDE * 2)
+        right - left > (int64_t)PSP_MAX_SIDE * 2 || bottom - top > (int64_t)PSP_MAX_SIDE * 2)
         return CODEC_INVALID;
     *width = (unsigned)(right - left);
     *height = (unsigned)(bottom - top);
@@ -939,10 +939,10 @@ static enum codec_result mask_plane(const struct context *c, const struct layer 
 }
 
 /* The mask value at canvas position x, y: 0 outside the saved rectangle. */
-static unsigned mask_at(const struct layer *l, const uint8_t *mask, long x, long y)
+static unsigned mask_at(const struct layer *l, const uint8_t *mask, int64_t x, int64_t y)
 {
-    if (x < l->mask_x || y < l->mask_y || x - l->mask_x >= (long)l->mask_width ||
-        y - l->mask_y >= (long)l->mask_height)
+    if (x < l->mask_x || y < l->mask_y || x - l->mask_x >= (int64_t)l->mask_width ||
+        y - l->mask_y >= (int64_t)l->mask_height)
         return 0;
     return mask[(size_t)(y - l->mask_y) * l->mask_width + (size_t)(x - l->mask_x)];
 }
@@ -952,7 +952,7 @@ static enum codec_result draw_raster(const struct context *c, const struct layer
 {
     size_t n = (size_t)l->width * l->height;
     uint8_t *rgba, *mask = NULL;
-    long x0, y0, x1, y1, x, y;
+    int64_t x0, y0, x1, y1, x, y;
     unsigned opacity;
     enum codec_result r;
 
@@ -960,8 +960,8 @@ static enum codec_result draw_raster(const struct context *c, const struct layer
         return CODEC_INVALID;
     x0 = l->x < 0 ? 0 : l->x;
     y0 = l->y < 0 ? 0 : l->y;
-    x1 = l->x + (long)l->width;
-    y1 = l->y + (long)l->height;
+    x1 = l->x + l->width;
+    y1 = l->y + l->height;
     if (x1 > (long)canvas->width) x1 = canvas->width;
     if (y1 > (long)canvas->height) y1 = canvas->height;
     /* Paint Shop Pro gives a layer with no transparency channel, as it
