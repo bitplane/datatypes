@@ -10,6 +10,7 @@ In the Descriptor column, "AROS" means AROS already ships the `Devs/DataTypes` d
 | [Amiga icons](formats/info/) | `.info` | Project icon | ours |
 | [Atari Falcon and TT](formats/falcon/) | `.god` `.tru` `.trp` `.tcp` `.pnt` `.tpi` `.dc1` `.pi4` and more | 24-bit Prism Paint | ours |
 | [Atari ST compressed paint](formats/stpaint/) | `.tny` `.ca1` `.ic1` `.pac` `.lpk` `.ppp` `.cp3` `.psc` and more | Tiny | ours |
+| [Atari ST multi-palette](formats/stmulti/) | `.mpp` `.pcs` | Nothing | ours |
 | [Atari ST screens](formats/stscreen/) | `.sta` `.doo` `.sc0` `.pg1` `.sd0` `.eza` `.ce1` and more | Paintworks | ours |
 | [AVS and AAI](formats/avs/) | `.avs` `.x` `.aai` | AVS or AAI | ours |
 | [BLP](formats/blp/) | `.blp` | BLP2, one level | ours |
