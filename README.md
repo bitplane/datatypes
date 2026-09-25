@@ -66,6 +66,15 @@ Reads X11 window dumps (version 7) in every visual class. ZPixmap images can hav
 Saves 24-bit TrueColor in 32-bit big-endian pixels with no colormap, the layout an X server's own dumps use, compositing transparency over white. The package includes its `Devs/DataTypes/XWD` descriptor. It matches files named `#?.xwd`; the decoder validates the header and accepts either byte order.
 `formats/xwd/XWD.dtyp` is the compiled form of `XWD.dtd`; regenerate it with AROS's `createdtdesc -o formats/xwd/XWD.dtyp formats/xwd/XWD.dtd` if the recognition rules change.
 
+## ICO
+
+Reads Windows icons (`.ico`) and cursors (`.cur`). Entries may be BMP, with 1, 4, 8, 16, 24 or 32 bits per pixel, `BI_RGB` or `BI_BITFIELDS`, any header from the 12-byte OS/2 one to V5, or PNG. The AND mask makes pixels transparent, except in 32-bit entries with real alpha. If a 32-bit entry's alpha is zero everywhere, the mask applies instead, as in Windows; an entry with no mask is opaque. PNG entries keep their alpha as it is. A cursor's hotspot becomes the picture's grab point.
+Loads the largest entry, and the deepest of equal sizes, unless `PDTA_WhichPicture` picks one by its position in the file. `PDTA_GetNumPictures` reports the number of entries.
+AROS's datatypes can only load from files, so a PNG entry is written to a temporary file in `T:` and loaded with the system's PNG datatype, as AROS's AmigaGuide class does for embedded objects. PNG entries therefore need `png.datatype` and a writable `T:`.
+Doesn't read RLE, JPEG or PNG compression inside BMP entries, or top-down BMP entries.
+Saves an icon with one BMP entry: 24-bit when every pixel is opaque, 32-bit with alpha otherwise. The AND mask marks fully transparent pixels. A grab point other than 0,0 saves a cursor with that hotspot instead. Images up to 256×256 can be saved.
+The package includes its `Devs/DataTypes/ICO` descriptor, which matches the `00 00 ?? 00` header on files named `#?.ico` or `#?.cur`, at priority -10, because the header alone is too weak to identify a file.
+`formats/ico/ICO.dtyp` is the compiled form of `ICO.dtd`; regenerate it with AROS's `createdtdesc -o formats/ico/ICO.dtyp formats/ico/ICO.dtd` if the recognition rules change.
 ## Palm bitmap
 
 Reads Palm OS bitmaps, versions 0 to 3: 1, 2, 4 and 8-bit indexed, and 16-bit RGB565 direct colour, uncompressed or with scanline, RLE or PackBits compression. Indexed bitmaps use their colour table when they have one; otherwise 1, 2 and 4-bit bitmaps are gray from white to black and 8-bit ones use the Palm system palette. ImageMagick flags its 1, 2 and 4-bit bitmaps as having a colour table without writing one, so at those depths the flag counts only when a table of at most 2^depth entries is actually there. The transparent index or colour becomes transparent when the header flags it, even if it covers the whole image. A file holding a bitmap family (several depths or densities chained together, with or without the high-density separator) is a multi-image picture: `PDTA_WhichPicture` picks a bitmap in file order, `PDTA_GetNumPictures` reports how many there are, and by default the largest, then deepest, bitmap loads. Little-endian (`indexedLE`, `rgb565LE`) version 3 bitmaps and direct colour other than 5:6:5 are rejected.
@@ -80,6 +89,13 @@ Reads Nokia OTA bitmaps (`.otb`), the 1-bit format of operator logos and picture
 
 Reads Microsoft Paint images from Windows 1 (`DanM`, uncompressed) and Windows 2 (`LinS`, run-length encoded by row). Images load as one-plane pictures, black and white. The header checksum isn't checked. In version 2 files, a row whose packed size is zero, or whose runs stop short, is white to its end, and a run past the end of its row is cut off. Saves version 1 files: pixels are composited over white, then set white if their luminance is at least half. The package includes its `Devs/DataTypes/MSP` descriptor. The two versions' keys share only their third byte, `n`, so the descriptor matches that byte and requires a `.msp` name.
 `formats/msp/MSP.dtyp` is the compiled form of `MSP.dtd`; regenerate it with AROS's `createdtdesc -o formats/msp/MSP.dtyp formats/msp/MSP.dtd` if the recognition rules change.
+
+## Spectrum 512
+
+Reads Atari ST Spectrum 512 pictures, uncompressed SPU and compressed SPC, as 320×200 images with a 48-colour palette on every line. Line 0 has no palette, so it is black, as in netpbm. Palettes use 3 bits per gun, scaled as netpbm scales them. If any palette word has a fourth bit set, the whole picture is read as STE, with 4 bits per gun; netpbm always ignores that bit. The top 4 bits of palette words are ignored. In SPC files the palette length field isn't checked, colour 15 of each palette is black, and a run past the end of the bitmap is cut off. Enhanced SPU files, which start with `5BIT` and store more bits per gun, are rejected, as are SPS and SPX files.
+Saves SPU when the picture is 320×200, its top line is black and every colour, after compositing over white, is an ST or STE level. Each line's colours must also fit the 48 palette slots, which the display switches at fixed columns. The writer finds a slot for each colour with a bounded search per line, so an unusually dense picture can fail to save even though a fitting palette exists.
+The package includes its `Devs/DataTypes/SPECTRUM` descriptor. SPU has no magic number and a package installs a single descriptor, so it matches any file named `.spu` or `.spc` at priority -10, and the class rejects files that aren't Spectrum 512.
+`formats/spectrum/SPECTRUM.dtyp` is the compiled form of `SPECTRUM.dtd`; regenerate it with AROS's `createdtdesc -o formats/spectrum/SPECTRUM.dtyp formats/spectrum/SPECTRUM.dtd` if the recognition rules change.
 
 ## NEOchrome
 
@@ -100,6 +116,11 @@ Reads PlayStation TIM textures: 4-bit and 8-bit indexed, 16-bit 5:5:5 and 24-bit
 
 Reads PlayStation 2 TIM2 textures: 4-bit and 8-bit indexed with 16, 24 or 32-bit CLUTs, and 16-bit 5:5:5:1, 24-bit and 32-bit direct colour. Alpha is kept as the GS reads it: 0x80 is opaque in 32-bit pixels and CLUT entries, and bit 15 is alpha in 16-bit ones. CLUTs in CSM1 order (all 256-colour CSM1 CLUTs, and 16-colour ones with the compound flag) are put back in index order. Indexed pictures use the first palette of their CLUT; a CLUT shorter than the index range leaves the rest black, and an indexed picture without one loads as grayscale. Every mipmap level of every picture is a separate image, in file order, selected with `PDTA_WhichPicture`; the default is the first picture at full size. Both 16 and 128-byte alignment, user data and extended headers are handled. The total-size field is ignored, since real files get it wrong. CLUT-only (`CLT2`) files are not supported. Textures whose pixels are stored in the GS's swizzled memory order are not marked as such in the file, so they load scrambled. Saves 24-bit TIM2 for opaque pictures and 32-bit otherwise, with alpha halved into the GS's 0–0x80 range, so translucent alpha loses its lowest bit. The package includes its `Devs/DataTypes/TIM2` descriptor, which matches the `TIM2` magic on files named `.tm2` or `.tim2`.
 `formats/tim2/TIM2.dtyp` is the compiled form of `TIM2.dtd`; regenerate it with AROS's `createdtdesc -o formats/tim2/TIM2.dtyp formats/tim2/TIM2.dtd` if the recognition rules change.
+
+## MTV and QRT
+
+Reads the output of two ray tracers: MTV (a text line `width height`, then 8-bit RGB triples) and QRT (16-bit little-endian width and height, then per row a row number and the red, green and blue planes). The class tells them apart by content. MTV header lines are read as ImageMagick and netpbm read them: blanks, a `+` sign and anything after the two numbers are allowed, but both numbers must be on the first line. QRT row numbers are ignored, as netpbm ignores them. Images load opaque. An MTV file can hold several images one after another, as ImageMagick writes them. `PDTA_WhichPicture` picks one, and `PDTA_GetNumPictures` reports how many there are. Bytes after the last image that don't form a header line are ignored. Saves one MTV image, compositing transparency over white.
+The package includes its `Devs/DataTypes/MTV` descriptor, which covers both formats. Neither has a magic number, so it matches the file name (`#?.mtv`, `#?.pic`, `#?.qrt` or `#?.dis`) at priority -10, and the decoder rejects files that are neither. QRT's own `.raw` name is too generic to claim. `formats/mtv/MTV.dtyp` is the compiled form of `MTV.dtd`; regenerate it with AROS's `createdtdesc -o formats/mtv/MTV.dtyp formats/mtv/MTV.dtd` if the recognition rules change.
 
 ## ICNS
 
@@ -129,6 +150,17 @@ Saves raw Group 3 MH at the picture's own width, bits first-to-last, with an EOL
 
 The package includes its `Devs/DataTypes/FAX` descriptor. Raw G3 has no magic number and CALS starts with text, so the one descriptor matches files named `.g3`, `.fax`, `.cal`, `.cals` or `.ct1`, at priority -10.
 `formats/fax/FAX.dtyp` is the compiled form of `FAX.dtd`; regenerate it with AROS's `createdtdesc -o formats/fax/FAX.dtyp formats/fax/FAX.dtd` if the recognition rules change.
+
+## DDS
+
+Reads DirectDraw Surface textures. Block-compressed images can be DXT1, DXT3 or DXT5 (BC1 to BC3), ATI1/BC4U (BC4, shown gray), or ATI2, BC5U and BC5S (BC5: red and green, with blue 0; signed values show as v + 128 with blue 128). DX10 headers add BC1 to BC5, BC6H and BC7. Uncompressed images can use any 8 to 32-bit RGB, luminance or alpha-only layout described by bit masks, 8-bit palettes, or the DX10 formats R8G8B8A8, B8G8R8A8, B8G8R8X8 and R10G10B10A2. BC6H is HDR: values are clamped to 0-1 and encoded with the sRGB curve. DXT1 blocks can be transparent. Alpha in other uncompressed formats and palettes counts only when the header declares it. DX10 premultiplied alpha is converted to straight alpha, and DX10's opaque alpha mode is honoured. Declared alpha is preserved even when it is zero everywhere.
+
+Mip levels, cube faces, array slices and volume slices are separate pictures, counted in file order: each face or slice in turn, then its mip levels from largest to smallest. Without `PDTA_WhichPicture` the first one loads. Levels missing from the end of a file aren't counted. A file whose first picture is cut short fails to load. Each picture can have at most 16M pixels.
+
+Not supported: DXT2 and DXT4 (premultiplied DXT3 and DXT5), BC4 signed, RXGB, YUV formats, the float and 16-bit-per-channel D3D formats, and DX10 formats other than those above, including the `_SRGB` codes of BC1 to BC3 and B8G8R8A8. Neither ImageMagick nor Pillow reads these.
+
+Saves uncompressed DDS with one image and no mip levels: 24-bit RGB when every pixel is opaque, 32-bit ARGB otherwise.
+The package includes its `Devs/DataTypes/DDS` descriptor, which matches the `DDS ` magic and the 124-byte header size on files named `#?.dds`. `formats/dds/DDS.dtyp` is the compiled form of `DDS.dtd`; regenerate it with AROS's `createdtdesc -o formats/dds/DDS.dtyp formats/dds/DDS.dtd` if the recognition rules change.
 
 ## Build and test
 
