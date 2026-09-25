@@ -39,7 +39,7 @@ static LONG load_zxscr(Class *cl, Object *obj)
         return error;
     /* Only the name tells 8x1 multicolour from Timex hi-colour. */
     GetDTAttrs(obj, DTA_Name, &name, TAG_END);
-    error = dt_error(zxscr_decode(input, (size_t)size, zxscr_name_kind(name), &image));
+    error = dt_error(zxscr_decode(input, (size_t)size, zxscr_name_kind((const char *)name), &image));
     FreeVec(input);
     if (error != 0)
         return error;
