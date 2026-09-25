@@ -125,6 +125,13 @@ Saves raw Group 3 MH at the picture's own width, bits first-to-last, with an EOL
 The package includes its `Devs/DataTypes/FAX` descriptor. Raw G3 has no magic number and CALS starts with text, so the one descriptor matches files named `.g3`, `.fax`, `.cal`, `.cals` or `.ct1`, at priority -10.
 `formats/fax/FAX.dtyp` is the compiled form of `FAX.dtd`; regenerate it with AROS's `createdtdesc -o formats/fax/FAX.dtyp formats/fax/FAX.dtd` if the recognition rules change.
 
+## Utah RLE
+
+Reads Utah Raster Toolkit RLE images with 8-bit pixels: gray, RGB and pseudocolour, each with or without alpha. Pseudocolour is one channel looked up in three colour maps, and RGB through three maps loads too. Maps give the high byte of each 16-bit entry, as the toolkit does, and values past the end of a short map pass through unchanged. Alpha is never mapped. The loader ignores the image's position and shows just the image. Pixels the file doesn't write take the background colour when the header asks for a clear to it, and are black otherwise. In images with alpha they are transparent. A declared alpha channel stays even when it is zero everywhere. Runs past the right edge are clipped and scanlines above the top are dropped. A file can hold several concatenated images: `PDTA_WhichPicture` picks one in file order, the first by default, and `PDTA_GetNumPictures` returns the count.
+Pixels other than 8 bits, channel counts other than 1 or 3, and map counts other than 0 or 3 are rejected. Neither ImageMagick nor netpbm reads these correctly.
+Saves one image with no background: gray when every pixel is gray and opaque, RGB when opaque, and RGB with alpha otherwise. The package includes its `Devs/DataTypes/UTAHRLE` descriptor, which matches the `52 CC` magic and 8-bit pixels whatever the file's name.
+`formats/utahrle/UTAHRLE.dtyp` is the compiled form of `UTAHRLE.dtd`; regenerate it with AROS's `createdtdesc -o formats/utahrle/UTAHRLE.dtyp formats/utahrle/UTAHRLE.dtd` if the recognition rules change.
+
 ## Build and test
 
 ```sh
