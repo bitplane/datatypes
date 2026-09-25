@@ -1,0 +1,8 @@
+Name=GD
+BaseName=gd
+Pattern=#?.gd
+Mask=ANY ANY ANY ANY ANY ANY ANY
+GroupID=pict
+ID=_gd_
+Flags=DTF_BINARY,DTF_CASE
+Priority=-10

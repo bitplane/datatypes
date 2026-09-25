@@ -1,0 +1,8 @@
+Name=Dr. Halo CUT
+BaseName=halocut
+Pattern=#?.cut
+Mask=ANY ANY ANY ANY 0x00 0x00
+GroupID=pict
+ID=halo
+Flags=DTF_BINARY,DTF_CASE
+Priority=-10

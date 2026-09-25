@@ -1,0 +1,8 @@
+Name=Atari ST multi-palette
+BaseName=stmulti
+Pattern=#?.(mpp|pcs)
+Mask=ANY ANY ANY ANY
+GroupID=pict
+ID=stmp
+Flags=DTF_BINARY,DTF_CASE
+Priority=-10

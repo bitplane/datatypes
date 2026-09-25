@@ -1,0 +1,8 @@
+Name=GD2
+BaseName=gd
+Pattern=#?.gd2
+Mask='g' 'd' '2' 0x00
+GroupID=pict
+ID=_gd2
+Flags=DTF_BINARY,DTF_CASE
+Priority=0
