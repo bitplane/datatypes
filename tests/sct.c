@@ -55,7 +55,7 @@ static void make(unsigned width, unsigned height, unsigned count, unsigned mask)
 
 static uint8_t scale(unsigned a, unsigned b)
 {
-    return (uint8_t)(a * b / 255u);
+    return (uint8_t)((a * b + 127u) / 255u);
 }
 
 /* Decode with mask (0 meaning "as in the file") and check every pixel. */

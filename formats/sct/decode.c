@@ -104,10 +104,11 @@ enum codec_result sct_decode(const uint8_t *data, size_t length,
         }
         for (x = 0; x < width; x++) {
             /* 255 is no ink and 0 full ink, so each ink scales the light
-               that the others leave. Rounded down, as by ImageMagick. */
+               that the others leave. */
             unsigned k = sep[3][x * present[3]];
             for (s = 0; s < 3; s++)
-                dst[x * 4u + s] = (uint8_t)(sep[s][x * present[s]] * k / 255u);
+                dst[x * 4u + s] = (uint8_t)((sep[s][x * present[s]] * k +
+                                             127u) / 255u);
             dst[x * 4u + 3u] = 255;
         }
     }
