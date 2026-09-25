@@ -1,4 +1,5 @@
 #include "decode.h"
+#include "common/atarist.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -153,19 +154,13 @@ static enum codec_result true_colour(const uint8_t *data, size_t length,
 static void planar(struct falcon_image *image, const uint8_t *bitmap,
                    size_t stride, unsigned planes, const palette_t palette)
 {
-    unsigned x, y, p;
+    unsigned x, y;
 
     for (y = 0; y < image->height; y++) {
         const uint8_t *line = bitmap + (size_t)y * stride;
         uint8_t *dst = image->rgba + (size_t)y * image->width * 4u;
-        for (x = 0; x < image->width; x++) {
-            const uint8_t *group = line + (size_t)(x / 16u) * planes * 2u;
-            unsigned bit = 15u - x % 16u, index = 0;
-            for (p = 0; p < planes; p++)
-                index |= ((be16(group + p * 2u) >> bit) & 1u) << p;
-            put(dst, palette[index]);
-            dst += 4;
-        }
+        for (x = 0; x < image->width; x++, dst += 4)
+            put(dst, palette[st_pixel(line, planes, x)]);
     }
 }
 
