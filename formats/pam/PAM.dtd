@@ -1,6 +1,6 @@
 Name=PAM
 BaseName=pam
-Pattern=#?
+Pattern=#?.(pam|pfm|phm)
 Mask='P' ANY ANY
 GroupID=pict
 ID=_pam
