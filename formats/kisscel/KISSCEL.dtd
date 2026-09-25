@@ -1,0 +1,7 @@
+Name=KiSS CEL
+BaseName=kisscel
+Pattern=#?.cel
+GroupID=pict
+ID=kcel
+Flags=DTF_BINARY
+Priority=-10

@@ -283,6 +283,16 @@ Saves uncompressed Paintworks: 320×200 (16 colours, `.sc0`), 640×200 (4, `.sc1
 
 The package includes its `Devs/DataTypes/STSCREEN` descriptor. There is no magic that all these formats share, so it matches on the extensions above only, requires at least 32 bytes, and has priority -10, like WBMP. SGI files named `.rgb` still go to the SGI class by their magic. Atari ST `.art` files need renaming to `.sta`: the C64 datatype already claims `.art`, and the two families have no distinguishing bytes at the start of the file. This preserves existing C64 recognition until a size-aware descriptor can route both.
 `formats/stscreen/STSCREEN.dtyp` is the compiled form of `STSCREEN.dtd`; regenerate it with AROS's `createdtdesc -o formats/stscreen/STSCREEN.dtyp formats/stscreen/STSCREEN.dtd` if the recognition rules change.
+## KiSS CEL
+
+Reads KiSS paper-doll cels: old headerless 4-bit cels, KiSS/GS 4-bit and 8-bit cels, and Cherry KiSS 32-bit cels, which are BGRA with straight alpha. Index 0 is transparent. The picture includes the cel's x and y offset as transparent space, the way GIMP lays it out. KiSS keeps palettes in separate KCF files (old headerless 12-bit groups, or KiSS/GS 12-bit and 24-bit files of 16 or 256 colours). The class looks for one in the cel's directory, in this order:
+
+1. a `.cnf` configuration that lists the cel. The class uses the palette file after `*` and the palette group of the first set the cel is in.
+2. a `.kcf` with the cel's name.
+3. the directory's only `.kcf`.
+
+If none turns up, palette cels show a grey ramp, which GIMP 2 uses when you cancel its palette dialog. 12-bit colours scale by 16 (`0xF` becomes 240), as in GIMP. Saves 32-bit cels, which need no palette file, with offset 0.
+The package includes its `Devs/DataTypes/KISSCEL` descriptor. Old cels have no magic, so the descriptor has no mask. It matches files named `#?.cel` at priority -10, and the decoder rejects files whose sizes don't add up. `formats/kisscel/KISSCEL.dtyp` is the compiled form of `KISSCEL.dtd`; regenerate it with AROS's `createdtdesc -o formats/kisscel/KISSCEL.dtyp formats/kisscel/KISSCEL.dtd` if the recognition rules change.
 
 ## PAA
 
@@ -411,6 +421,10 @@ Wavefront RLA files have gray or RGB colour channels of 1 to 16 bits. Deeper cha
 Alias PIX files hold 24-bit colour or an 8-bit gray matte, which loads as a gray image. Runs may carry on into the next row, as ImageMagick reads them. The header's offset fields are ignored.
 Saves an 8-bit RGB RLA file. When the picture has transparency it adds a matte channel and multiplies the colour by it, so colour under partial or zero alpha loses precision. PIX isn't saved because it can't hold alpha. The package includes its `Devs/DataTypes/Alias` descriptor. PIX has no magic number, so the descriptor matches the file name (`#?.rla`, `#?.pix`, `#?.als` or `#?.alias`) at priority -10, and the decoder rejects files that are neither format. Packages ship one descriptor, which rules out a separate content match on the RLA revision field.
 `formats/alias/ALIAS.dtyp` is the compiled form of `ALIAS.dtd`; regenerate it with AROS's `createdtdesc -o formats/alias/ALIAS.dtyp formats/alias/ALIAS.dtd` if the recognition rules change.
+
+## Lunapaint
+
+Reads Lunapaint projects (`Lunapaint_v1`), the layered and animated format of AROS's own paint program, and shows each frame flattened. Layers are composited bottom up, as Lunapaint draws them. Hidden layers and layers at 0% opacity are left out, and each layer's alpha is scaled by its opacity. Channels are 16 bits in the file and keep their top 8 bits, as Lunapaint shows them. Where the picture below is opaque, the arithmetic is Lunapaint's own, so those pixels match what Lunapaint shows exactly. Where it isn't, layers are blended with straight-alpha "over" and the transparency is kept. Lunapaint's own PNG export tints those pixels grey and adds the alphas together. The file doesn't record its byte order, so the class tries both and keeps the one whose object table ends exactly at the end of the file, little-endian if both fit. Each frame is a separate picture selected with `PDTA_WhichPicture`; the default is the first frame. Layer attributes come from every record in the object table. Lunapaint's own loader stops after the first frame's records, and it also counts three records per layer where a layer with no name has only two. A table that is short, ends mid-record or holds records for layers that don't exist is read as far as it makes sense, and missing attributes keep Lunapaint's defaults (visible, 100%). Only the layers of the chosen frame are read from the file, so large animations don't need to fit in memory. Saves a one-layer, one-frame project in the byte order of the machine saving it, which is what Lunapaint on that machine reads. Each 8-bit channel is widened exactly (times 257), so a saved picture loads back unchanged, except that fully transparent pixels load as transparent black. Pictures wider or taller than 32767 can't be saved, because Lunapaint stores sizes as signed shorts. AROS's `Devs/DataTypes/Lunapaint` descriptor selects the class by the `Lunapaint_v1` magic.
 
 ## Atari ST compressed paint
 
