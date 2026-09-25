@@ -1,0 +1,8 @@
+Name=Atari ST screen
+BaseName=stscreen
+Pattern=#?.(sta|doo|bil|ssb|srt|da4|kid|rgb|sd[0-2]|sc[0-2]|cl[0-2]|pg[0-3]|eza|ce[1-3])
+Mask=ANY ANY ANY ANY ANY ANY ANY ANY ANY ANY ANY ANY ANY ANY ANY ANY ANY ANY ANY ANY ANY ANY ANY ANY ANY ANY ANY ANY ANY ANY ANY ANY
+GroupID=pict
+ID=stsc
+Flags=DTF_BINARY,DTF_CASE
+Priority=-10

@@ -255,6 +255,45 @@ Reads X11 cursor files, as shipped in cursor themes on Linux desktops. Each imag
 Saves a one-image cursor with its hotspot at the top left and its larger side as the nominal size. Colours are premultiplied, so semi-transparent pixels lose some precision and fully transparent ones lose their colour. The package includes its `Devs/DataTypes/XCURSOR` descriptor, which matches the `Xcur` magic whatever the file is called, since theme cursors have no extension.
 `formats/xcursor/XCURSOR.dtyp` is the compiled form of `XCURSOR.dtd`; regenerate it with AROS's `createdtdesc -o formats/xcursor/XCURSOR.dtyp formats/xcursor/XCURSOR.dtd` if the recognition rules change.
 
+## Atari ST screens
+
+Reads Atari ST screen dumps from painting and digitiser programs, one class for all of them:
+
+| Extension | Program | Picture |
+|---|---|---|
+| `.sta` (rename `.art` files) | Art Director (32512 bytes), GFA Artist (32032), MonoSTar and The ArtiST (32000) | 320×200×16, or 640×400 mono |
+| `.doo` | Doodle | 640×400 mono |
+| `.bil` | ColorSTar (GFA Artist or low resolution DEGAS layout) | 320×200×16 |
+| `.ssb` | Sinbad Slideshow | 320×200×16 |
+| `.srt` | Synthetic Arts | 640×200×4 |
+| `.da4` | PaintShop | 640×800 mono |
+| `.kid` | Fullscreen Construction Kit | 448×274×16 overscan |
+| `.rgb` | RGB Intermediate (three pictures, one per gun) | 320×200, 4096 colours |
+| `.sd0`–`.sd2` | Dali, uncompressed | low, medium or high by extension |
+| `.sc0`–`.sc2`, `.cl0`–`.cl2`, `.pg0`–`.pg2` | Paintworks screens, clips and double-height pages, raw or run-length | all three modes; pages are 320×400, 640×400 or 640×800 |
+| `.pg1`–`.pg3` | Graphics Processor, raw or run-length | all three modes |
+| `.eza` | EZ-Art Professional (PackBits) | 320×200×16 |
+| `.ce1`–`.ce3` | ComputerEyes | 320×200 18-bit RGB, 640×200 15-bit RGB, 640×400 grey |
+
+Most of these formats have no magic number, so the class takes the extension from the file name to choose which to try. Only Dali needs it for more than that: its files don't record their resolution. Palettes are read the same way as NEOchrome's: 3 bits per gun, or 4 on the STE when a colour the mode uses has the fourth bit set. Medium resolution stays 640×200, and high resolution is black on white, whatever the palette says. ComputerEyes levels are bit-replicated to 8 bits. The grey mode's 0–191 sums are scaled by 4/3, as RECOIL does. Bytes after the picture are ignored.
+
+Not supported: compressed Dali (`.lpk`, `.mpk`, `.hpk`), Pablo, CrackArt, Tiny, Imagic and other compressed formats; multi-palette pictures (GFA Artist's 34360-byte variant, Palette Master, HighresMedium); ColorSTar objects and pictures with separate palette files. None of ImageMagick, Pillow or netpbm reads these formats. The decoder matches RECOIL pixel for pixel, apart from RECOIL doubling medium resolution lines for aspect.
+
+Saves uncompressed Paintworks: 320×200 (16 colours, `.sc0`), 640×200 (4, `.sc1`), 640×400 (black and white `.sc2`, otherwise a 4-colour `.pg1` page), 320×400 (`.pg0`) and 640×800 (black and white `.pg2`). The picture must fit the mode's palette exactly with ST or STE levels once composited over white. Other pictures can't be saved, because the format can't hold them without loss.
+
+The package includes its `Devs/DataTypes/STSCREEN` descriptor. There is no magic that all these formats share, so it matches on the extensions above only, requires at least 32 bytes, and has priority -10, like WBMP. SGI files named `.rgb` still go to the SGI class by their magic. Atari ST `.art` files need renaming to `.sta`: the C64 datatype already claims `.art`, and the two families have no distinguishing bytes at the start of the file. This preserves existing C64 recognition until a size-aware descriptor can route both.
+`formats/stscreen/STSCREEN.dtyp` is the compiled form of `STSCREEN.dtd`; regenerate it with AROS's `createdtdesc -o formats/stscreen/STSCREEN.dtyp formats/stscreen/STSCREEN.dtd` if the recognition rules change.
+## KiSS CEL
+
+Reads KiSS paper-doll cels: old headerless 4-bit cels, KiSS/GS 4-bit and 8-bit cels, and Cherry KiSS 32-bit cels, which are BGRA with straight alpha. Index 0 is transparent. The picture includes the cel's x and y offset as transparent space, the way GIMP lays it out. KiSS keeps palettes in separate KCF files (old headerless 12-bit groups, or KiSS/GS 12-bit and 24-bit files of 16 or 256 colours). The class looks for one in the cel's directory, in this order:
+
+1. a `.cnf` configuration that lists the cel. The class uses the palette file after `*` and the palette group of the first set the cel is in.
+2. a `.kcf` with the cel's name.
+3. the directory's only `.kcf`.
+
+If none turns up, palette cels show a grey ramp, which GIMP 2 uses when you cancel its palette dialog. 12-bit colours scale by 16 (`0xF` becomes 240), as in GIMP. Saves 32-bit cels, which need no palette file, with offset 0.
+The package includes its `Devs/DataTypes/KISSCEL` descriptor. Old cels have no magic, so the descriptor has no mask. It matches files named `#?.cel` at priority -10, and the decoder rejects files whose sizes don't add up. `formats/kisscel/KISSCEL.dtyp` is the compiled form of `KISSCEL.dtd`; regenerate it with AROS's `createdtdesc -o formats/kisscel/KISSCEL.dtyp formats/kisscel/KISSCEL.dtd` if the recognition rules change.
+
 ## PAA
 
 Reads Bohemia Interactive PAA and PAC textures from Operation Flashpoint, Arma and DayZ. The block-compressed types are DXT1 to DXT5; DXT1 blocks can be transparent, as Direct3D reads them, and DXT2 and DXT4 are premultiplied, so their alpha is divided out. The others are ARGB4444, ARGB1555, ARGB8888 and 8-bit gray with alpha, all in Direct3D's channel order, with their alpha kept even when it is zero everywhere. Also reads Operation Flashpoint's 8-bit index-palette files, which have no type word, including the 1997 demo's, which have no taggs either; their levels are run-length or LZSS coded, and an index past the end of the palette is black. DXT levels flagged in the width's top bit are LZO-compressed, as Arma 2 and later write them; the other types are LZSS-compressed, and the checksum after the data must match, summed as signed or as unsigned bytes. Some third-party writers store those levels uncompressed, which is accepted when the level is exactly the uncompressed size. Taggs are skipped, including the swizzle tagg that normal and specular maps carry, so those load with their channels as stored. Palettes in typed files and bytes after the end marker are ignored.
@@ -382,6 +421,10 @@ Wavefront RLA files have gray or RGB colour channels of 1 to 16 bits. Deeper cha
 Alias PIX files hold 24-bit colour or an 8-bit gray matte, which loads as a gray image. Runs may carry on into the next row, as ImageMagick reads them. The header's offset fields are ignored.
 Saves an 8-bit RGB RLA file. When the picture has transparency it adds a matte channel and multiplies the colour by it, so colour under partial or zero alpha loses precision. PIX isn't saved because it can't hold alpha. The package includes its `Devs/DataTypes/Alias` descriptor. PIX has no magic number, so the descriptor matches the file name (`#?.rla`, `#?.pix`, `#?.als` or `#?.alias`) at priority -10, and the decoder rejects files that are neither format. Packages ship one descriptor, which rules out a separate content match on the RLA revision field.
 `formats/alias/ALIAS.dtyp` is the compiled form of `ALIAS.dtd`; regenerate it with AROS's `createdtdesc -o formats/alias/ALIAS.dtyp formats/alias/ALIAS.dtd` if the recognition rules change.
+
+## Lunapaint
+
+Reads Lunapaint projects (`Lunapaint_v1`), the layered and animated format of AROS's own paint program, and shows each frame flattened. Layers are composited bottom up, as Lunapaint draws them. Hidden layers and layers at 0% opacity are left out, and each layer's alpha is scaled by its opacity. Channels are 16 bits in the file and keep their top 8 bits, as Lunapaint shows them. Where the picture below is opaque, the arithmetic is Lunapaint's own, so those pixels match what Lunapaint shows exactly. Where it isn't, layers are blended with straight-alpha "over" and the transparency is kept. Lunapaint's own PNG export tints those pixels grey and adds the alphas together. The file doesn't record its byte order, so the class tries both and keeps the one whose object table ends exactly at the end of the file, little-endian if both fit. Each frame is a separate picture selected with `PDTA_WhichPicture`; the default is the first frame. Layer attributes come from every record in the object table. Lunapaint's own loader stops after the first frame's records, and it also counts three records per layer where a layer with no name has only two. A table that is short, ends mid-record or holds records for layers that don't exist is read as far as it makes sense, and missing attributes keep Lunapaint's defaults (visible, 100%). Only the layers of the chosen frame are read from the file, so large animations don't need to fit in memory. Saves a one-layer, one-frame project in the byte order of the machine saving it, which is what Lunapaint on that machine reads. Each 8-bit channel is widened exactly (times 257), so a saved picture loads back unchanged, except that fully transparent pixels load as transparent black. Pictures wider or taller than 32767 can't be saved, because Lunapaint stores sizes as signed shorts. AROS's `Devs/DataTypes/Lunapaint` descriptor selects the class by the `Lunapaint_v1` magic.
 
 ## Atari ST compressed paint
 
