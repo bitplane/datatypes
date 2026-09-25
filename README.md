@@ -255,6 +255,28 @@ Reads X11 cursor files, as shipped in cursor themes on Linux desktops. Each imag
 Saves a one-image cursor with its hotspot at the top left and its larger side as the nominal size. Colours are premultiplied, so semi-transparent pixels lose some precision and fully transparent ones lose their colour. The package includes its `Devs/DataTypes/XCURSOR` descriptor, which matches the `Xcur` magic whatever the file is called, since theme cursors have no extension.
 `formats/xcursor/XCURSOR.dtyp` is the compiled form of `XCURSOR.dtd`; regenerate it with AROS's `createdtdesc -o formats/xcursor/XCURSOR.dtyp formats/xcursor/XCURSOR.dtd` if the recognition rules change.
 
+## Amiga icons
+
+Reads Workbench `.info` icons, in every form an icon keeps its images in:
+
+- **Planar images** (OS 1.x to 3.1), of any depth. The file holds no colours, so pens take Workbench's defaults: the OS 1.3 blue, white, black and orange for revision 0 icons, as netpbm shows them; the OS 2 grey, black, white and blue for later ones; MagicWB's eight colours for images that reach pens 4 to 7; and for deeper images, AROS's default screen palette at the image's depth, which adds red, green, dark blue and yellow as the last four pens and the pointer's reds as pens 17 to 19, with the other pens black. Most 8-plane icons use just those pens; 4- to 6-plane sets that shipped their own palette show their other pens black, as AROS draws them. Pen 0 is opaque, as Workbench draws it. PlanePick and PlaneOnOff are applied, so a selected image with PlanePick 0 is a solid PlaneOnOff pen, as `DrawImage` draws it.
+- **NewIcons** held in `IM1=` and `IM2=` tooltypes after the `*** DON'T EDIT THE FOLLOWING LINES!! ***` line, with pen 0 transparent when the header says so.
+- **OS 3.5 colour icons** ("GlowIcons"): `IMAG` chunks in the `FORM ICON` after the icon, packed or raw, with a packed or raw palette, or reusing the first image's palette, and a transparent pen when flagged.
+- **ARGB images**: zlib `ARGB` chunks written by AROS, MorphOS and OS4 icon tools. The stored packed size is ignored in favour of the zlib stream's own end, because AROS stores the size and the others store it less one.
+
+A file holds up to eight images: normal and selected images of each kind. `PDTA_WhichPicture` picks one by its position in the file, and `PDTA_GetNumPictures` reports how many there are. Otherwise the image Workbench would show loads: ARGB before OS 3.5, then NewIcons, then planar, and the normal image before the selected one. Revision 0 drawers that carry DrawerData2 anyway, as some early Workbench 2 icons do, still find their `FORM ICON`.
+
+**Not supported:**
+
+- **PNG icons** (OS4 and MorphOS `.info` files that are PNG files). The stock PNG class opens them, showing the first image.
+- **`png ` chunks inside a `FORM ICON`.** They are skipped.
+
+Tooltypes, positions, drawer windows and the frame and aspect flags are ignored.
+
+Saves a project icon: a two-plane image in the OS 2 pens for old Workbenches, then a `FORM ICON` holding the picture itself. That is a packed OS 3.5 palette image when the picture has at most 256 colours and every pixel is fully opaque or fully transparent, and a zlib `ARGB` image otherwise. The colour of fully transparent pixels isn't kept. OS 3.5 images are at most 256 pixels a side, so larger pictures can't be saved.
+
+The package includes its `Devs/DataTypes/INFO` descriptor, which matches the `0xE310` magic and version 1 on files named `#?.info`, so GNU texinfo files with the same extension aren't claimed.
+`formats/info/INFO.dtyp` is the compiled form of `INFO.dtd`; regenerate it with AROS's `createdtdesc -o formats/info/INFO.dtyp formats/info/INFO.dtd` if the recognition rules change.
 ## AVS and AAI
 
 Reads two headerless 32-bit rasters: Stardent AVS X images (big-endian 32-bit width and height, then alpha, red, green and blue bytes) and Dune HD AAI images (the same with little-endian sizes and blue, green, red, alpha pixels). The class tells them apart by content. Sides are at most 65535, so the two byte orders never both give a valid header. Alpha is straight and always kept, with two exceptions. An AVS image whose alpha is zero everywhere loads opaque, because original AVS files such as the format's `mandrill.x` sample leave it zero. In AAI, 254 is opaque, as Dune's tools and ImageMagick write it. A file can hold several images of one kind back to back, as ImageMagick writes them. `PDTA_WhichPicture` picks one and `PDTA_GetNumPictures` reports how many there are. A zero-sized header or fewer than 8 trailing bytes ends the list. Saves one image with its alpha, as AAI if the picture came from a `.aai` file and as AVS otherwise. A fully transparent picture saved as AVS reloads opaque.
