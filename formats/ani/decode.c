@@ -30,7 +30,8 @@ static enum codec_result walk(const uint8_t *data, size_t length, size_t pos, si
         if (size > length - pos - 8)
             return CODEC_TRUNCATED;
         next = pos + 8 + size;
-        if (!nested && memcmp(data + pos, "LIST", 4) == 0 && size >= 4) {
+        if (!nested && memcmp(data + pos, "LIST", 4) == 0 && size >= 4 &&
+            memcmp(data + pos + 8, "fram", 4) == 0) {
             result = walk(data, length, pos + 12, next, 1, s, &inner);
             if (result != CODEC_OK)
                 return result;

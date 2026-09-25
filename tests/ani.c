@@ -168,6 +168,7 @@ static void test_layout(void)
     list = open_list("INFO");
     chunk("INAM", "odd", 3);
     chunk("IART", "x", 1);
+    chunk("icon", "metadata", 8); /* INFO is metadata, not a frame list. */
     close_list(list);
     memset(anih, 0, sizeof anih);           /* cbSize 0 and no flags, as some writers */
     chunk("anih", anih, sizeof anih);
