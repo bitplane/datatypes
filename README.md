@@ -19,6 +19,7 @@ In the Descriptor column, "AROS" means AROS already ships the `Devs/DataTypes` d
 | [CompuServe RLE](formats/cis/) | `.rle` `.cis` | 128×96 or 256×192 | ours |
 | [DCX](formats/dcx/) | `.dcx` | One-page 24-bit RGB | ours |
 | [DDS](formats/dds/) | `.dds` | 24-bit RGB or 32-bit ARGB | ours |
+| [Dr. Halo CUT](formats/halocut/) | `.cut` | none | ours |
 | [Farbfeld](formats/farbfeld/) | `.ff` | 16-bit RGBA | ours |
 | [FAX](formats/fax/) | `.g3` `.fax` `.cal` `.cals` `.ct1` `.c4` `.mil` `.ras` | Raw Group 3 MH | ours |
 | [FTEX](formats/ftex/) | `.ftc` `.ftu` | Uncompressed 24-bit `.ftu` | ours |
