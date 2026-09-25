@@ -1,0 +1,7 @@
+Name=FAX
+BaseName=fax
+Pattern=#?.(g3|fax|cal|cals|ct1)
+GroupID=pict
+ID=_fax
+Flags=DTF_BINARY
+Priority=-10

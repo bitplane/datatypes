@@ -30,6 +30,18 @@ while IFS= read -r -d '' path; do
             format=${path#formats/}
             selected+=("${format%%/*}")
             ;;
+        common/zlib.c|common/zlib.h)
+            # Only formats that use the zlib wrapper need an SDK rebuild.
+            for source in formats/*/*.[ch]; do
+                if grep -Fq '"common/zlib.h"' "$source"; then
+                    format=${source#formats/}
+                    selected+=("${format%%/*}")
+                fi
+            done
+            ;;
+        Makefile|CLAUDE.md|scripts/ci-formats.sh)
+            # The decoder job covers host build changes; these do not alter SDK builds.
+            ;;
         tests/aros-check.c)
             all_formats
             exit 0
