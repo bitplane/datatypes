@@ -1,0 +1,8 @@
+Name=GIMP XCF
+BaseName=gimp
+Pattern=#?
+Mask='g''i''m''p'' ''x''c''f'' '
+GroupID=pict
+ID=gxcf
+Flags=DTF_BINARY,DTF_CASE
+Priority=0
