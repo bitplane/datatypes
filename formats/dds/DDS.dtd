@@ -1,0 +1,8 @@
+Name=DDS
+BaseName=dds
+Pattern=#?.dds
+Mask='D' 'D' 'S' ' ' 0x7c 0x00 0x00 0x00
+GroupID=pict
+ID=_dds
+Flags=DTF_BINARY,DTF_CASE
+Priority=0
