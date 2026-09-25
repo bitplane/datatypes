@@ -1,18 +1,10 @@
 #include "decode.h"
+#include "common/atarist.h"
 #include <stdlib.h>
 
 static unsigned be16(const uint8_t *p)
 {
     return ((unsigned)p[0] << 8) | p[1];
-}
-
-uint8_t neo_level(unsigned nibble, int ste)
-{
-    /* The STE keeps its extra, least significant bit in bit 3. */
-    if (ste)
-        return (uint8_t)((((nibble & 7u) << 1) | ((nibble >> 3) & 1u)) * 17u);
-    /* round(v * 255 / 7), as netpbm scales maxval 7. */
-    return (uint8_t)(((nibble & 7u) * 255u + 3u) / 7u);
 }
 
 void neo_free(struct neo_image *image)
@@ -27,8 +19,7 @@ enum codec_result neo_decode(const uint8_t *data, size_t length,
 {
     static const uint8_t mono[2][3] = { { 255, 255, 255 }, { 0, 0, 0 } };
     uint8_t palette[16][3];
-    unsigned resolution, planes, colours, width, height, x, y, i;
-    int ste = 0;
+    unsigned resolution, planes, colours, width, height, x, y;
 
     if (image == NULL)
         return CODEC_INVALID;
@@ -49,15 +40,7 @@ enum codec_result neo_decode(const uint8_t *data, size_t length,
 
     /* Colours the resolution doesn't use often hold garbage, so they
        don't decide whether the palette is STE. */
-    for (i = 0; i < colours; i++)
-        if (be16(data + 4 + i * 2u) & 0x888u)
-            ste = 1;
-    for (i = 0; i < colours; i++) {
-        unsigned c = be16(data + 4 + i * 2u);
-        palette[i][0] = neo_level(c >> 8, ste);
-        palette[i][1] = neo_level(c >> 4, ste);
-        palette[i][2] = neo_level(c, ste);
-    }
+    st_palette(data + 4, colours, palette);
 
     image->rgba = malloc((size_t)width * height * 4u);
     if (image->rgba == NULL)
@@ -69,12 +52,8 @@ enum codec_result neo_decode(const uint8_t *data, size_t length,
         const uint8_t *line = data + 128 + (size_t)y * width * planes / 8u;
         uint8_t *dst = image->rgba + (size_t)y * width * 4u;
         for (x = 0; x < width; x++) {
-            const uint8_t *group = line + (x / 16u) * planes * 2u;
-            unsigned bit = 15u - x % 16u, index = 0, p;
-            const uint8_t *rgb;
-            for (p = 0; p < planes; p++)
-                index |= ((be16(group + p * 2u) >> bit) & 1u) << p;
-            rgb = resolution == 2 ? mono[index] : palette[index];
+            unsigned index = st_pixel(line, planes, x);
+            const uint8_t *rgb = resolution == 2 ? mono[index] : palette[index];
             dst[0] = rgb[0];
             dst[1] = rgb[1];
             dst[2] = rgb[2];

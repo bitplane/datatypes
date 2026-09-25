@@ -1,5 +1,6 @@
 #include "../formats/neo/decode.h"
 #include "../formats/neo/encode.h"
+#include "common/atarist.h"
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -83,10 +84,10 @@ int main(void)
 
     /* ST levels scale like netpbm's maxval 7; STE levels are 0..15 * 17. */
     for (i = 0; i < 8; i++) {
-        assert(neo_level(i, 0) == st[i]);
-        assert(neo_level(i | 8u, 0) == st[i]);
-        assert(neo_level(i, 1) == i * 34u);
-        assert(neo_level(i | 8u, 1) == i * 34u + 17u);
+        assert(st_level(i, 0) == st[i]);
+        assert(st_level(i | 8u, 0) == st[i]);
+        assert(st_level(i, 1) == i * 34u);
+        assert(st_level(i | 8u, 1) == i * 34u + 17u);
     }
 
     /* Low resolution: four interleaved planes, plane 0 the lowest bit. */

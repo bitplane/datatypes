@@ -18,8 +18,6 @@ struct spectrum_image { unsigned width, height; uint8_t *rgba; };
 enum codec_result spectrum_decode(const uint8_t *data, size_t length,
                                   struct spectrum_image *image);
 void spectrum_free(struct spectrum_image *image);
-/* One gun of a palette word: 3-bit ST, or 4-bit STE with its low bit in bit 3. */
-uint8_t spectrum_level(unsigned nibble, int ste);
 /* The palette slot (0-47) that colour c uses at column x of a line. */
 unsigned spectrum_slot(unsigned c, unsigned x);
 #endif
