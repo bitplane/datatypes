@@ -221,6 +221,26 @@ Reads X11 cursor files, as shipped in cursor themes on Linux desktops. Each imag
 Saves a one-image cursor with its hotspot at the top left and its larger side as the nominal size. Colours are premultiplied, so semi-transparent pixels lose some precision and fully transparent ones lose their colour. The package includes its `Devs/DataTypes/XCURSOR` descriptor, which matches the `Xcur` magic whatever the file is called, since theme cursors have no extension.
 `formats/xcursor/XCURSOR.dtyp` is the compiled form of `XCURSOR.dtd`; regenerate it with AROS's `createdtdesc -o formats/xcursor/XCURSOR.dtyp formats/xcursor/XCURSOR.dtd` if the recognition rules change.
 
+## Japanese PC pictures
+
+Reads the compressed picture formats of 1990s Japanese computers, the NEC PC-98 and PC-88, Sharp X68000, FM TOWNS and MSX. The class tells them apart by their magic:
+
+- **MAG** (Maki-chan 2, `MAKI02`), 16 or 256 colours, from any machine. The picture is cropped to the header's rectangle, including a left edge that doesn't fall on a flag unit. MSX files also read in their screen modes: screen 5, 7 and 8, screen 6 at 2 bits per pixel, and the YJK modes of screens 10 to 12, with or without the palette colours of screens 10 and 11. Palette values are used as stored, because the MAG specification has writers fill the low bits.
+- **MKI** (Maki-chan 1, `MAKI01A` and `MAKI01B`), 640×400 in 16 colours.
+- **Pi**, 16 or 256 colours, including files that leave the palette out for the specification's default one.
+- **PIC**: X68000 pictures in 16, 256, 32768 and 65536 colours; PC-88VA pictures in 256, 4096 and 65536 colours, including the dithered 256-colour mode stored as pairs; FM TOWNS and Macintosh pictures; and the generic model's 16 and 256-colour packed palettes, 4096, 32768, 65536 and 16M colours. Comments starting `/MM/` mark MSX pictures.
+
+Pi and MKI palettes are stored with the machine's missing low bits as zeros. They're widened to 8 bits the way the machine named in the file shows them: 4 bits for the PC-98 and PC-88, 3 for the MSX, 5 for the X68000 and FM TOWNS, and 5, 6 and 5 for the PC-88VA. Files wrapped in a 128-byte MacBinary header also load.
+
+Pixels aren't always square, so pictures are scaled to the intended aspect by repeating lines or columns. MAG files with the 200-line bit set, PC-8001 MAG files and PC-88 Pi files get double-height lines. PC-88VA PIC pictures are sized against the 640×400 screen outside HR mode, so 200-line pictures get double-height lines and 320-pixel ones double-width columns. Pi files with a 2:1 aspect ratio are scaled the way the ratio says. MSX MAG files follow their screen mode. X68000 pictures in 512×512 modes are shown unscaled: their pixels are wider than tall, but by a ratio the specification gives two ways (16:9 and 13:9), and not a whole number.
+
+Not supported: MKI files of any size but 640×400; Pi pictures 1 or 2 pixels wide, which the specification codes differently; PIC files of other models or colour depths, such as the generic model's undefined 32-bit colour. Truncated files are rejected rather than shown in part.
+
+Saves MAG: 16 colours when the picture has at most 16, 256 when it has at most 256, compositing transparency over white. Pictures with more than 256 colours can't be saved. Saved files have square pixels and machine code 0.
+
+The package includes its `Devs/DataTypes/JAPANPC` descriptor. One descriptor has to cover four formats with different magic numbers, so it matches only the file name: `#?.(mag|max|mki|pi|pic)`, at priority -10, and the decoder rejects files named like that that aren't one of these formats, such as Softimage or PC Paint `.pic` files. `datatypes.library` sorts files whose first 64 bytes are mostly text into its ASCII list, so a MAG, Pi or PIC file with a long plain-ASCII comment isn't recognised.
+`formats/japanpc/JAPANPC.dtyp` is the compiled form of `JAPANPC.dtd`; regenerate it with AROS's `createdtdesc -o formats/japanpc/JAPANPC.dtyp formats/japanpc/JAPANPC.dtd` if the recognition rules change.
+
 ## Build and test
 
 ```sh
