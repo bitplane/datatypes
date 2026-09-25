@@ -98,7 +98,8 @@ IPTR UtahRLE__DTM_WRITE(Class *cl, Object *obj, struct dtWrite *msg)
     /* MultiView probes RAW support without opening an output file. */
     if (msg->dtw_FileHandle == BNULL)
         return TRUE;
-    if (!dt_picture_size(obj, &width, &height))
+    if (!dt_picture_size(obj, &width, &height) ||
+        (uint64_t)width * height > 16u * 1024u * 1024u)
         return FALSE;
     capacity = utahrle_row_capacity(width);
     out = AllocVec(capacity, MEMF_ANY);
