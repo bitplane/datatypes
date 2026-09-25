@@ -1,4 +1,5 @@
 #include "decode.h"
+#include "common/atarist.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -26,15 +27,6 @@ static const uint8_t mono[2][3] = { { 255, 255, 255 }, { 0, 0, 0 } };
 static unsigned be16(const uint8_t *p)
 {
     return ((unsigned)p[0] << 8) | p[1];
-}
-
-uint8_t stscreen_level(unsigned nibble, int ste)
-{
-    /* The STE keeps its extra, least significant bit in bit 3. */
-    if (ste)
-        return (uint8_t)((((nibble & 7u) << 1) | ((nibble >> 3) & 1u)) * 17u);
-    /* round(v * 255 / 7), which is also 3-bit replication. */
-    return (uint8_t)(((nibble & 7u) * 255u + 3u) / 7u);
 }
 
 void stscreen_free(struct stscreen_image *image)
@@ -92,17 +84,6 @@ static void put(struct stscreen_image *image, unsigned x, unsigned y,
     p[3] = 255;
 }
 
-/* Colour index of pixel x in a line where each 16 pixels are one word per plane. */
-static unsigned index_at(const uint8_t *line, unsigned x, unsigned planes)
-{
-    const uint8_t *group = line + (x / 16u) * planes * 2u;
-    unsigned bit = 15u - x % 16u, index = 0, p;
-
-    for (p = 0; p < planes; p++)
-        index |= ((be16(group + p * 2u) >> bit) & 1u) << p;
-    return index;
-}
-
 static void planar(struct stscreen_image *image, const uint8_t *bits,
                    size_t stride, unsigned planes, const uint8_t (*palette)[3])
 {
@@ -110,25 +91,7 @@ static void planar(struct stscreen_image *image, const uint8_t *bits,
 
     for (y = 0; y < image->height; y++)
         for (x = 0; x < image->width; x++)
-            put(image, x, y, palette[index_at(bits + y * stride, x, planes)]);
-}
-
-/* A palette of count words. It is STE (4 bits per gun) if any colour has a
-   fourth bit set, and ST otherwise. */
-static void st_palette(const uint8_t *words, unsigned count, uint8_t palette[16][3])
-{
-    unsigned i;
-    int ste = 0;
-
-    for (i = 0; i < count; i++)
-        if (be16(words + i * 2u) & 0x888u)
-            ste = 1;
-    for (i = 0; i < count; i++) {
-        unsigned c = be16(words + i * 2u);
-        palette[i][0] = stscreen_level(c >> 8, ste);
-        palette[i][1] = stscreen_level(c >> 4, ste);
-        palette[i][2] = stscreen_level(c, ste);
-    }
+            put(image, x, y, palette[st_pixel(bits + y * stride, planes, x)]);
 }
 
 /* A whole screen in resolution mode 0 (320x200x16), 1 (640x200x4) or
@@ -444,7 +407,7 @@ static enum codec_result rgb_intermediate(const uint8_t *data, size_t length,
         for (x = 0; x < 320; x++) {
             uint8_t rgb[3];
             for (c = 0; c < 3; c++)
-                rgb[c] = (uint8_t)(index_at(data + 34 + c * 32034u + y * 160u, x, 4) * 17u);
+                rgb[c] = (uint8_t)(st_pixel(data + 34 + c * 32034u + y * 160u, 4, x) * 17u);
             put(image, x, y, rgb);
         }
     return CODEC_OK;

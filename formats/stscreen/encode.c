@@ -1,5 +1,5 @@
 #include "encode.h"
-#include "decode.h"
+#include "common/atarist.h"
 #include <string.h>
 
 /* Paintworks layouts, in the order they are tried for a size. */
@@ -28,21 +28,10 @@ static void composite(const uint8_t *p, uint8_t rgb[3])
     rgb[2] = over_white(p[2], p[3]);
 }
 
-/* The palette nibble that decodes to level, or -1 if there is none. */
-static int nibble(uint8_t level, int ste)
-{
-    unsigned n;
-
-    for (n = 0; n < 16; n++)
-        if ((ste || n < 8) && stscreen_level(n, ste) == level)
-            return (int)n;
-    return -1;
-}
-
 /* The 12-bit palette entry for rgb, or -1 if it can't be stored. */
 static int entry(const uint8_t *rgb, int ste)
 {
-    int r = nibble(rgb[0], ste), g = nibble(rgb[1], ste), b = nibble(rgb[2], ste);
+    int r = st_nibble(rgb[0], ste), g = st_nibble(rgb[1], ste), b = st_nibble(rgb[2], ste);
 
     if (r < 0 || g < 0 || b < 0)
         return -1;

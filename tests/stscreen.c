@@ -1,5 +1,6 @@
 #include "../formats/stscreen/decode.h"
 #include "../formats/stscreen/encode.h"
+#include "../common/atarist.h"
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -176,10 +177,10 @@ static void test_levels(void)
     unsigned i;
 
     for (i = 0; i < 8; i++) {
-        assert(stscreen_level(i, 0) == st[i]);
-        assert(stscreen_level(i | 8u, 0) == st[i]);
-        assert(stscreen_level(i, 1) == i * 34u);
-        assert(stscreen_level(i | 8u, 1) == i * 34u + 17u);
+        assert(st_level(i, 0) == st[i]);
+        assert(st_level(i | 8u, 0) == st[i]);
+        assert(st_level(i, 1) == i * 34u);
+        assert(st_level(i | 8u, 1) == i * 34u + 17u);
     }
 }
 
