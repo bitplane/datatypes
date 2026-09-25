@@ -127,11 +127,11 @@ static void test_masks(void)
     pixel(&im, 0, 0, 0x10, 0x20, 0x30, 255);
     dds_free(&im);
 
-    /* Alpha that is zero everywhere is shown opaque. */
+    /* Declared alpha stays transparent even when every value is zero. */
     put32(data + 80, PF_RGB | PF_ALPHAPIXELS);
     data[o + 3] = 0;
     assert(decode(o + 4, 0, &im) == CODEC_OK);
-    pixel(&im, 0, 0, 0x10, 0x20, 0x30, 255);
+    pixel(&im, 0, 0, 0x10, 0x20, 0x30, 0);
     dds_free(&im);
 
     /* 5:6:5 widens every value as floor(v * 255 / max). */
@@ -328,10 +328,10 @@ static void test_bc1_to_bc5(void)
     dds_free(&im);
     assert(decode(o + 15, 0, &im) == CODEC_TRUNCATED);
 
-    /* A DXT1 image that is transparent everywhere is shown opaque. */
+    /* A DXT1 image that is transparent everywhere stays transparent. */
     memcpy(data + o, "\x00\x00\xff\xff\xff\xff\xff\xff", 8);
     assert(decode(o + 16, 0, &im) == CODEC_OK);
-    pixel(&im, 0, 0, 0, 0, 0, 255);
+    pixel(&im, 0, 0, 0, 0, 0, 0);
     dds_free(&im);
 
     /* DX10 BC1 whose alpha mode is opaque ignores the punch-through. */

@@ -496,12 +496,7 @@ static void fix_alpha(enum alpha alpha, uint8_t *rgba, size_t pixels)
 {
     size_t i;
     unsigned k;
-    int any = 0;
-
-    if (alpha != OPAQUE)
-        for (i = 0; i < pixels && !any; i++)
-            any = rgba[i * 4u + 3u] != 0;
-    if (!any) {
+    if (alpha == OPAQUE) {
         for (i = 0; i < pixels; i++)
             rgba[i * 4u + 3u] = 255;
         return;
