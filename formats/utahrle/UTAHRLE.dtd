@@ -1,0 +1,8 @@
+Name=UtahRLE
+BaseName=utahrle
+Pattern=#?
+Mask=0x52 0xcc ANY ANY ANY ANY ANY ANY ANY ANY ANY ANY 0x08
+GroupID=pict
+ID=_urt
+Flags=DTF_BINARY,DTF_CASE
+Priority=0
