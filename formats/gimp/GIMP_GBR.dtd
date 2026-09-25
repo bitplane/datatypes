@@ -1,0 +1,8 @@
+Name=GIMP Brush
+BaseName=gimp
+Pattern=#?.(gbr|gpb)
+Mask=ANYANYANYANYANYANYANYANYANYANYANYANYANYANYANYANYANYANYANYANY'G''I''M''P'
+GroupID=pict
+ID=gbrh
+Flags=DTF_BINARY,DTF_CASE
+Priority=0

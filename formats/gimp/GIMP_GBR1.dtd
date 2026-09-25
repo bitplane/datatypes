@@ -1,0 +1,8 @@
+Name=GIMP Brush v1
+BaseName=gimp
+Pattern=#?.gbr
+Mask=ANY ANY ANY ANY 0x00 0x00 0x00 0x01
+GroupID=pict
+ID=gbrh
+Flags=DTF_BINARY,DTF_CASE
+Priority=-10
