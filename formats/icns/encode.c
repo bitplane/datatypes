@@ -2,7 +2,7 @@
 #include <string.h>
 
 #include "encode.h"
-#include "png.h"
+#include "common/png.h"
 
 struct slot { unsigned size; char type[5], mask[5]; };
 
