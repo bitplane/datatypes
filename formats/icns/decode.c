@@ -2,7 +2,8 @@
 #include <string.h>
 
 #include "decode.h"
-#include "png.h"
+#include "common/png.h"
+#include "common/zlib.h"
 
 enum format { MONO, PAL4, PAL8, RGB, PACKED };
 

@@ -1,6 +1,6 @@
 #include "../formats/icns/decode.h"
 #include "../formats/icns/encode.h"
-#include "../formats/icns/png.h"
+#include "../common/png.h"
 #include "../common/zlib.h"
 #include <assert.h>
 #include <stdio.h>

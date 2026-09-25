@@ -15,6 +15,7 @@
    in use. */
 struct Library *Z1Base;
 AROS_GM_LIBFUNCSTUB(inflateInit_, Z1Base, LVOinflateInit_)
+AROS_GM_LIBFUNCSTUB(inflateInit2_, Z1Base, LVOinflateInit2_)
 AROS_GM_LIBFUNCSTUB(inflate, Z1Base, LVOinflate)
 AROS_GM_LIBFUNCSTUB(inflateEnd, Z1Base, LVOinflateEnd)
 AROS_GM_LIBFUNCSTUB(deflateInit_, Z1Base, LVOdeflateInit_)
@@ -60,9 +61,11 @@ static uInt piece(size_t left)
     return left > UINT_MAX ? UINT_MAX : (uInt)left;
 }
 
-enum codec_result zlib_inflate(const unsigned char *src, size_t src_length,
-                               unsigned char *dst, size_t dst_length,
-                               size_t *written)
+/* window_bits 15 reads a zlib stream, -15 raw deflate. */
+static enum codec_result inflate_stream(int window_bits,
+                                        const unsigned char *src, size_t src_length,
+                                        unsigned char *dst, size_t dst_length,
+                                        size_t *written)
 {
     z_stream stream;
     size_t in_left = src_length, out_left = dst_length;
@@ -73,7 +76,7 @@ enum codec_result zlib_inflate(const unsigned char *src, size_t src_length,
     if (!z1_open())
         return CODEC_NO_MEMORY;
     memset(&stream, 0, sizeof stream);
-    if (inflateInit(&stream) != Z_OK) {
+    if (inflateInit2(&stream, window_bits) != Z_OK) {
         z1_close();
         return CODEC_NO_MEMORY;
     }
@@ -100,6 +103,20 @@ enum codec_result zlib_inflate(const unsigned char *src, size_t src_length,
     inflateEnd(&stream);
     z1_close();
     return result;
+}
+
+enum codec_result zlib_inflate(const unsigned char *src, size_t src_length,
+                               unsigned char *dst, size_t dst_length,
+                               size_t *written)
+{
+    return inflate_stream(MAX_WBITS, src, src_length, dst, dst_length, written);
+}
+
+enum codec_result zlib_inflate_raw(const unsigned char *src, size_t src_length,
+                                   unsigned char *dst, size_t dst_length,
+                                   size_t *written)
+{
+    return inflate_stream(-MAX_WBITS, src, src_length, dst, dst_length, written);
 }
 
 enum codec_result zlib_deflate(const unsigned char *src, size_t src_length,
