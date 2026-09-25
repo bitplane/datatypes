@@ -12,6 +12,4 @@ struct neo_image { unsigned width, height; uint8_t *rgba; };
 enum codec_result neo_decode(const uint8_t *data, size_t length,
                              struct neo_image *image);
 void neo_free(struct neo_image *image);
-/* 8-bit level of one palette nibble. */
-uint8_t neo_level(unsigned nibble, int ste);
 #endif
