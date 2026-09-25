@@ -26,23 +26,24 @@ static int lookup(const uint8_t *p)
     return -1;
 }
 
-enum codec_result zxscr_encode(const uint8_t *rgba, unsigned width,
-                               unsigned height, uint8_t output[ZXSCR_FILE_SIZE])
+/* Fill output with cells cell_height rows high (8 or 1). Attributes go
+   after the bitmap: linear for 8x8 cells, interleaved like it for 8x1. */
+static enum codec_result encode_cells(const uint8_t *rgba, unsigned cell_height,
+                                      uint8_t *output)
 {
     unsigned cx, cy, x, y;
 
-    if (rgba == NULL || output == NULL || width != ZXSCR_WIDTH || height != ZXSCR_HEIGHT)
-        return CODEC_INVALID;
-    memset(output, 0, ZXSCR_FILE_SIZE);
-    for (cy = 0; cy < ZXSCR_HEIGHT / 8u; cy++)
+    memset(output, 0, cell_height == 8u ? ZXSCR_FILE_SIZE : ZXSCR_TIMEX_SIZE);
+    for (cy = 0; cy < ZXSCR_HEIGHT / cell_height; cy++)
         for (cx = 0; cx < ZXSCR_WIDTH / 8u; cx++) {
-            int index[64], used[2], count = 0, bright = -1, i;
+            int index[64], used[2], count = 0, bright = -1, i, n = (int)cell_height * 8;
             unsigned paper, ink;
+            size_t at;
 
-            for (i = 0; i < 64; i++) {
+            for (i = 0; i < n; i++) {
                 x = cx * 8u + (unsigned)i % 8u;
-                y = cy * 8u + (unsigned)i / 8u;
-                index[i] = lookup(rgba + ((size_t)y * width + x) * 4u);
+                y = cy * cell_height + (unsigned)i / 8u;
+                index[i] = lookup(rgba + ((size_t)y * ZXSCR_WIDTH + x) * 4u);
                 if (index[i] < 0)
                     return CODEC_INVALID;
                 if (index[i] != 0) {
@@ -65,14 +66,30 @@ enum codec_result zxscr_encode(const uint8_t *rgba, unsigned width,
                 ink = paper;
                 paper = (unsigned)used[1];
             }
-            output[6144u + cy * 32u + cx] =
-                (uint8_t)(ink | paper << 3 | (bright > 0 ? 0x40u : 0u));
-            for (i = 0; i < 64; i++)
+            at = cell_height == 8u ? cy * 32u + cx : zxscr_offset(cx * 8u, cy);
+            output[6144u + at] = (uint8_t)(ink | paper << 3 | (bright > 0 ? 0x40u : 0u));
+            for (i = 0; i < n; i++)
                 if ((unsigned)index[i] != paper) {
                     x = cx * 8u + (unsigned)i % 8u;
-                    y = cy * 8u + (unsigned)i / 8u;
+                    y = cy * cell_height + (unsigned)i / 8u;
                     output[zxscr_offset(x, y)] |= (uint8_t)(0x80u >> (x % 8u));
                 }
         }
     return CODEC_OK;
+}
+
+enum codec_result zxscr_encode(const uint8_t *rgba, unsigned width, unsigned height,
+                               uint8_t output[ZXSCR_TIMEX_SIZE], size_t *length)
+{
+    if (rgba == NULL || output == NULL || length == NULL ||
+        width != ZXSCR_WIDTH || height != ZXSCR_HEIGHT)
+        return CODEC_INVALID;
+    *length = ZXSCR_FILE_SIZE;
+    if (encode_cells(rgba, 8, output) == CODEC_OK)
+        return CODEC_OK;
+    *length = ZXSCR_TIMEX_SIZE;
+    if (encode_cells(rgba, 1, output) == CODEC_OK)
+        return CODEC_OK;
+    *length = 0;
+    return CODEC_INVALID;
 }
