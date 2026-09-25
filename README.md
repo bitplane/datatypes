@@ -261,7 +261,7 @@ Reads Atari ST screen dumps from painting and digitiser programs, one class for 
 
 | Extension | Program | Picture |
 |---|---|---|
-| `.art` | Art Director (32512 bytes), GFA Artist (32032), MonoSTar and The ArtiST (32000) | 320×200×16, or 640×400 mono |
+| `.sta` (rename `.art` files) | Art Director (32512 bytes), GFA Artist (32032), MonoSTar and The ArtiST (32000) | 320×200×16, or 640×400 mono |
 | `.doo` | Doodle | 640×400 mono |
 | `.bil` | ColorSTar (GFA Artist or low resolution DEGAS layout) | 320×200×16 |
 | `.ssb` | Sinbad Slideshow | 320×200×16 |
@@ -281,7 +281,7 @@ Not supported: compressed Dali (`.lpk`, `.mpk`, `.hpk`), Pablo, CrackArt, Tiny, 
 
 Saves uncompressed Paintworks: 320×200 (16 colours, `.sc0`), 640×200 (4, `.sc1`), 640×400 (black and white `.sc2`, otherwise a 4-colour `.pg1` page), 320×400 (`.pg0`) and 640×800 (black and white `.pg2`). The picture must fit the mode's palette exactly with ST or STE levels once composited over white. Other pictures can't be saved, because the format can't hold them without loss.
 
-The package includes its `Devs/DataTypes/STSCREEN` descriptor. There is no magic that all these formats share, so it matches on the extensions above only, requires at least 32 bytes, and has priority -10, like WBMP. SGI files named `.rgb` still go to the SGI class by their magic.
+The package includes its `Devs/DataTypes/STSCREEN` descriptor. There is no magic that all these formats share, so it matches on the extensions above only, requires at least 32 bytes, and has priority -10, like WBMP. SGI files named `.rgb` still go to the SGI class by their magic. Atari ST `.art` files need renaming to `.sta`: the C64 datatype already claims `.art`, and the two families have no distinguishing bytes at the start of the file. This preserves existing C64 recognition until a size-aware descriptor can route both.
 `formats/stscreen/STSCREEN.dtyp` is the compiled form of `STSCREEN.dtd`; regenerate it with AROS's `createdtdesc -o formats/stscreen/STSCREEN.dtyp formats/stscreen/STSCREEN.dtd` if the recognition rules change.
 
 ## PAA

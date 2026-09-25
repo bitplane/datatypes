@@ -13,7 +13,7 @@ static const struct {
     char ext[4];
     enum family family;
 } extensions[] = {
-    { "art", ART }, { "doo", DOO }, { "bil", BIL }, { "ssb", SSB },
+    { "art", ART }, { "sta", ART }, { "doo", DOO }, { "bil", BIL }, { "ssb", SSB },
     { "srt", SRT }, { "da4", DA4 }, { "kid", KID }, { "rgb", RGB },
     { "sd0", SD0 }, { "sd1", SD1 }, { "sd2", SD2 },
     { "sc0", PAINTWORKS }, { "sc1", PAINTWORKS }, { "sc2", PAINTWORKS },
