@@ -1,0 +1,8 @@
+Name=JBIG
+BaseName=jbig
+Pattern=#?.(jbg|jbig|bie)
+Mask=0x00 ANY ANY 0x00 0x00
+GroupID=pict
+ID=jbig
+Flags=DTF_BINARY,DTF_CASE
+Priority=-10

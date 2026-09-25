@@ -27,6 +27,7 @@ In the Descriptor column, "AROS" means AROS already ships the `Devs/DataTypes` d
 | [ICNS](formats/icns/) | `.icns` | Square icons, one image | ours |
 | [ICO](formats/ico/) | `.ico` `.cur` | One-image BMP icon or cursor | ours |
 | [Japanese PC pictures](formats/japanpc/) | `.mag` `.max` `.mki` `.pi` `.pic` | MAG | ours |
+| [JBIG](formats/jbig/) | `.jbg` `.jbig` `.bie` | One-plane sequential | ours |
 | [Khoros VIFF](formats/viff/) | `.viff` `.xv` | 8-bit RGB or RGBA | ours |
 | [KiSS CEL](formats/kisscel/) | `.cel` | 32-bit cel | ours |
 | [Lunapaint](formats/lunapaint/) | none | One layer, one frame | AROS |
