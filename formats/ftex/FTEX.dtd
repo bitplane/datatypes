@@ -1,0 +1,8 @@
+Name=FTEX
+BaseName=ftex
+Pattern=#?.(ftc|ftu)
+Mask='F' 'T' 'E' 'X'
+GroupID=pict
+ID=ftex
+Flags=DTF_BINARY,DTF_CASE
+Priority=0
