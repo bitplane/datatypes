@@ -1,0 +1,8 @@
+Name=CMU Window Manager
+BaseName=cmuwm
+Pattern=#?
+Mask=0xf1 0x00 0x40 0xbb
+GroupID=pict
+ID=cmuw
+Flags=DTF_BINARY,DTF_CASE
+Priority=0
