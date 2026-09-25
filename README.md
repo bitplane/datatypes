@@ -272,7 +272,7 @@ Not supported: MKI files of any size but 640×400; Pi pictures 1 or 2 pixels wid
 
 Saves MAG: 16 colours when the picture has at most 16, 256 when it has at most 256, compositing transparency over white. Pictures with more than 256 colours can't be saved. Saved files have square pixels and machine code 0.
 
-The package includes its `Devs/DataTypes/JAPANPC` descriptor. One descriptor has to cover four formats with different magic numbers, so it matches only the file name: `#?.(mag|max|mki|pi|pic)`, at priority -10, and the decoder rejects files named like that that aren't one of these formats, such as Softimage or PC Paint `.pic` files. `datatypes.library` sorts files whose first 64 bytes are mostly text into its ASCII list, so a MAG, Pi or PIC file with a long plain-ASCII comment isn't recognised.
+The package includes its `Devs/DataTypes/JAPANPC` descriptor. One descriptor has to cover four formats with different magic numbers, so it matches only the file name: `#?.(mag|max|mki|pi|pic)`, at priority -10, and the decoder rejects files named like that that aren't one of these formats, such as Softimage or PC Paint `.pic` files. A MAG with a long ASCII comment still loads: when AROS finds only the generic ASCII type, it also checks binary descriptors.
 `formats/japanpc/JAPANPC.dtyp` is the compiled form of `JAPANPC.dtd`; regenerate it with AROS's `createdtdesc -o formats/japanpc/JAPANPC.dtyp formats/japanpc/JAPANPC.dtd` if the recognition rules change.
 
 ## Atari Falcon and TT
