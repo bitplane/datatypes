@@ -1,0 +1,8 @@
+Name=ANI
+BaseName=ani
+Pattern=#?
+Mask='R' 'I' 'F' 'F' ANY ANY ANY ANY 'A' 'C' 'O' 'N'
+GroupID=pict
+ID=acon
+Flags=DTF_BINARY,DTF_CASE
+Priority=1
