@@ -168,6 +168,12 @@ Not supported: DXT2 and DXT4 (premultiplied DXT3 and DXT5), BC4 signed, RXGB, YU
 Saves uncompressed DDS with one image and no mip levels: 24-bit RGB when every pixel is opaque, 32-bit ARGB otherwise.
 The package includes its `Devs/DataTypes/DDS` descriptor, which matches the `DDS ` magic and the 124-byte header size on files named `#?.dds`. `formats/dds/DDS.dtyp` is the compiled form of `DDS.dtd`; regenerate it with AROS's `createdtdesc -o formats/dds/DDS.dtyp formats/dds/DDS.dtd` if the recognition rules change.
 
+## Xcursor
+
+Reads X11 cursor files, as shipped in cursor themes on Linux desktops. Each image is 32-bit ARGB with premultiplied alpha. It loads as straight alpha, converted the way GIMP converts it, and the alpha channel is always kept. A file holds several images: nominal sizes, and animation frames within each size. `PDTA_WhichPicture` picks one by its position among the image entries in the table of contents, and `PDTA_GetNumPictures` reports how many there are. Otherwise the largest image loads, and the first of several equally large frames. Comments and unknown chunk types are skipped. Hotspots and frame delays are ignored, and a hotspot outside the image, which libXcursor rejects, doesn't stop the file loading. As in libXcursor, the file fails to load if any image entry is damaged or truncated, or if a side is over 32767 pixels.
+Saves a one-image cursor with its hotspot at the top left and its larger side as the nominal size. Colours are premultiplied, so semi-transparent pixels lose some precision and fully transparent ones lose their colour. The package includes its `Devs/DataTypes/XCURSOR` descriptor, which matches the `Xcur` magic whatever the file is called, since theme cursors have no extension.
+`formats/xcursor/XCURSOR.dtyp` is the compiled form of `XCURSOR.dtd`; regenerate it with AROS's `createdtdesc -o formats/xcursor/XCURSOR.dtyp formats/xcursor/XCURSOR.dtd` if the recognition rules change.
+
 ## Build and test
 
 ```sh
