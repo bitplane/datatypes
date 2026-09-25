@@ -16,9 +16,9 @@
 #include "decode.h"
 #include "encode.h"
 
-/* Screens are 6912 bytes. Larger files up to this size reach the decoder,
-   which rejects them as other screen formats rather than too large. */
-#define MAX_ZXSCR_FILE (64L * 1024L)
+/* Fixed-size screens are at most 24578 bytes. SXG pictures are a header,
+   a palette and up to ZXSCR_MAX_PIXELS bytes of pixels. */
+#define MAX_ZXSCR_FILE ((LONG)ZXSCR_MAX_PIXELS + 1024L)
 
 ADD2LIBS((const UBYTE *)"datatypes/picture.datatype", 0, struct Library *, PictureBase);
 
@@ -30,13 +30,16 @@ struct collector {
 static LONG load_zxscr(Class *cl, Object *obj)
 {
     struct zxscr_image image;
+    STRPTR name = NULL;
     UBYTE *input;
     LONG size, error;
 
     error = dt_read_file(obj, 1, MAX_ZXSCR_FILE, &input, &size);
     if (error != 0 || input == NULL)
         return error;
-    error = dt_error(zxscr_decode(input, (size_t)size, &image));
+    /* Only the name tells 8x1 multicolour from Timex hi-colour. */
+    GetDTAttrs(obj, DTA_Name, &name, TAG_END);
+    error = dt_error(zxscr_decode(input, (size_t)size, zxscr_name_kind((const char *)name), &image));
     FreeVec(input);
     if (error != 0)
         return error;
@@ -63,6 +66,7 @@ IPTR Zxscr__DTM_WRITE(Class *cl, Object *obj, struct dtWrite *msg)
 {
     struct collector c;
     UBYTE *output;
+    size_t length;
     ULONG width, height;
     IPTR success = FALSE;
 
@@ -78,12 +82,12 @@ IPTR Zxscr__DTM_WRITE(Class *cl, Object *obj, struct dtWrite *msg)
         return FALSE;
     }
     c.rgba = AllocVec(width * height * 4u, MEMF_ANY);
-    output = AllocVec(ZXSCR_FILE_SIZE, MEMF_ANY);
+    output = AllocVec(ZXSCR_TIMEX_SIZE, MEMF_ANY);
     c.row = 0;
     if (c.rgba != NULL && output != NULL && dt_each_row(cl, obj, collect_row, &c)) {
-        LONG error = dt_error(zxscr_encode(c.rgba, width, height, output));
+        LONG error = dt_error(zxscr_encode(c.rgba, width, height, output, &length));
         if (error == 0)
-            success = dt_write(msg->dtw_FileHandle, output, ZXSCR_FILE_SIZE);
+            success = dt_write(msg->dtw_FileHandle, output, (LONG)length);
         else
             SetIoErr(error);
     }
