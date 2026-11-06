@@ -11,6 +11,8 @@
 #define ZXSCR_HEIGHT 192u
 /* SXG pictures are the only ones whose size comes from a header. */
 #define ZXSCR_MAX_PIXELS (16u * 1024u * 1024u)
+/* SXG bitmap offset is a 16-bit displacement from byte 16. */
+#define ZXSCR_MAX_FILE_SIZE (ZXSCR_MAX_PIXELS + 16u + 65535u)
 struct zxscr_image { unsigned width, height; uint8_t *rgba; };
 /* 12288-byte files are Timex hi-colour screens unless their name says they
    are 8x1 multicolour pictures: .mc (linear bitmap) or .mlt. */

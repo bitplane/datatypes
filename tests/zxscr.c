@@ -539,6 +539,25 @@ static void test_sxg(void)
     /* At the limit, only the pixels are missing. */
     bitmap = sxg(2, 4096, 4096, 0, 2);
     assert(decode(bitmap + 10, ZXSCR_NAME_OTHER, &image) == CODEC_TRUNCATED);
+    /* The largest SXG offset plus a full raster must fit the class read limit. */
+    {
+        const size_t offset = 16u + 65535u;
+        const size_t length = offset + ZXSCR_MAX_PIXELS;
+        uint8_t *large = calloc(1, length);
+        assert(large != NULL);
+        sxg(2, 4096, 4096, 0, 1);
+        memcpy(large, data, 16);
+        /* One palette entry immediately before the raster. */
+        large[12] = large[13] = large[14] = large[15] = 255;
+        large[offset - 2u] = 0;
+        large[offset - 1u] = 0xfc; /* RGB555 red */
+        assert(zxscr_decode(large, length, ZXSCR_NAME_OTHER, &image) == CODEC_OK);
+        expect(&image, 0, 0, 255, 0, 0);
+        expect(&image, 4095, 4095, 255, 0, 0);
+        zxscr_free(&image);
+        free(large);
+        assert(length <= ZXSCR_MAX_FILE_SIZE);
+    }
     /* A screen-sized file with SXG magic is read as SXG. */
     sxg(2, 2, 1, 0, 0);
     assert(decode(6912, ZXSCR_NAME_OTHER, &image) == CODEC_OK);

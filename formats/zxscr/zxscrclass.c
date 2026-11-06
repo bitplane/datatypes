@@ -16,9 +16,8 @@
 #include "decode.h"
 #include "encode.h"
 
-/* Fixed-size screens are at most 24578 bytes. SXG pictures are a header,
-   a palette and up to ZXSCR_MAX_PIXELS bytes of pixels. */
-#define MAX_ZXSCR_FILE ((LONG)ZXSCR_MAX_PIXELS + 1024L)
+/* Includes the largest supported SXG raster and its prefix. */
+#define MAX_ZXSCR_FILE ((LONG)ZXSCR_MAX_FILE_SIZE)
 
 ADD2LIBS((const UBYTE *)"datatypes/picture.datatype", 0, struct Library *, PictureBase);
 
