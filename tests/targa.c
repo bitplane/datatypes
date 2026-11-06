@@ -101,6 +101,20 @@ int main(void)
     const uint8_t gray_alpha[4] = {77, 77, 77, 42};
     const uint8_t rgba[4] = {10, 20, 30, 40};
 
+    /* A footer or extension cannot supply missing raster bytes. */
+    {
+        uint8_t metadata[18 + 495 + 26] = {0};
+        header(metadata, 2, 1, 1, 24, 0x20);
+        memcpy(metadata + 18 + 8, "TRUEVISION-XFILE.\0", 18);
+        assert(tga_decode(metadata, 18 + 26, &image) == CODEC_TRUNCATED);
+        memset(metadata + 18, 0, sizeof metadata - 18);
+        metadata[18] = 495 & 255;
+        metadata[19] = 495 >> 8;
+        metadata[18 + 495] = 18;
+        memcpy(metadata + 18 + 495 + 8, "TRUEVISION-XFILE.\0", 18);
+        assert(tga_decode(metadata, sizeof metadata, &image) == CODEC_TRUNCATED);
+    }
+
     header(data, 2, 2, 1, 24, 0x30); /* top/right origin */
     data[18] = 0; data[19] = 0; data[20] = 255; /* red */
     data[21] = 255; data[22] = 0; data[23] = 0; /* blue */

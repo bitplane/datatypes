@@ -117,7 +117,7 @@ enum codec_result tga_decode(const uint8_t *data, size_t length,
     unsigned palette_first, palette_count, palette_depth, palette_bytes;
     unsigned i, n, packet, run, source_x, source_y, dest_x, dest_y;
     unsigned alpha_type = 3;
-    size_t pixels, offset;
+    size_t pixels, offset, image_end = length;
     enum codec_result result;
 
     if (image == NULL)
@@ -142,11 +142,13 @@ enum codec_result tga_decode(const uint8_t *data, size_t length,
     if (length >= 26 &&
         memcmp(data + length - 18, "TRUEVISION-XFILE.\0", 18) == 0) {
         uint32_t extension = le32(data + length - 26);
+        image_end = length - 26;
         if (extension != 0) {
-            if (extension > length - 26 || length - 26 - extension < 495 ||
+            if (extension < 18 || extension > length - 26 || length - 26 - extension < 495 ||
                 le16(data + extension) < 495)
                 return CODEC_INVALID;
             alpha_type = data[extension + 494];
+            image_end = extension;
         }
     }
     if (width == 0 || height == 0 || (descriptor & 0xc0u) != 0)
@@ -165,7 +167,10 @@ enum codec_result tga_decode(const uint8_t *data, size_t length,
     if (pixels > TGA_MAX_PIXELS)
         return CODEC_TOO_LARGE;
     r.data = data;
-    r.size = length;
+    /* Recognised metadata must not complete a truncated raster or palette. */
+    if (image_end < 18)
+        return CODEC_TRUNCATED;
+    r.size = image_end;
     r.pos = 18;
     if (!take(&r, NULL, data[0]))
         return CODEC_TRUNCATED;
