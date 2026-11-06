@@ -55,7 +55,10 @@ int alias_make_header(unsigned width, unsigned height, int alpha,
 
 size_t alias_row_capacity(unsigned width)
 {
-    return 4u * (2u + (size_t)width + ((size_t)width + 127u) / 128u);
+    /* Each packet consumes at least one sample and emits at most two
+       bytes per sample. Include four channel lengths and the matte.
+       Short literals between runs need more overhead than long literals. */
+    return 4u * (2u + (size_t)width * 2u);
 }
 
 static uint8_t sample(const uint8_t *px, unsigned channel, int alpha)

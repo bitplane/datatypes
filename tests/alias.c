@@ -565,6 +565,38 @@ static void test_write_composite(void)
     expect(want, 2, 1);
 }
 
+/* Short literals alternating with pairs expand more than long literals. */
+static void test_write_capacity(void)
+{
+    static const unsigned widths[] = { 1, 2, 3, 127, 128, 129, 300, 32768 };
+    unsigned i, x;
+    for (i = 0; i < sizeof widths / sizeof widths[0]; i++) {
+        unsigned width = widths[i];
+        size_t capacity = alias_row_capacity(width), size;
+        uint8_t *rgba = malloc((size_t)width * 4u);
+        uint8_t *row = malloc(capacity);
+        uint8_t *encoded = malloc(RLA_HEADER_SIZE + 4u + capacity);
+        struct alias_image image;
+        assert(rgba && row && encoded);
+        for (x = 0; x < width; x++) {
+            rgba[x * 4u] = rgba[x * 4u + 1u] = rgba[x * 4u + 2u] = 255;
+            rgba[x * 4u + 3u] = x % 3u == 0 ? 255 : 254;
+        }
+        size = alias_encode_row(rgba, width, 1, row);
+        assert(size <= capacity);
+        assert(alias_make_header(width, 1, 1, encoded));
+        alias_put32(encoded + RLA_HEADER_SIZE, RLA_HEADER_SIZE + 4u);
+        memcpy(encoded + RLA_HEADER_SIZE + 4u, row, size);
+        assert(alias_decode(encoded, RLA_HEADER_SIZE + 4u + size, 0,
+                            &image) == CODEC_OK);
+        assert(memcmp(image.rgba, rgba, (size_t)width * 4u) == 0);
+        alias_free(&image);
+        free(encoded);
+        free(row);
+        free(rgba);
+    }
+}
+
 static void test_write_limits(void)
 {
     static uint8_t header[RLA_HEADER_SIZE];
@@ -590,6 +622,7 @@ int main(void)
     test_write_opaque();
     test_write_alpha();
     test_write_composite();
+    test_write_capacity();
     test_write_limits();
     puts("alias: ok");
     return 0;
