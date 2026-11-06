@@ -8,3 +8,4 @@ cis	assessed	No confirmed defect; reviewed run bounds, termination and parity co
 cmuwm	assessed	No codec defect confirmed; reviewed endian/header variants, size arithmetic, thresholding and class; descriptor matches big-endian magic only	test-cmuwm passed ASan/UBSan; AROS runtime unverified
 dcx	assessed	No confirmed defect; reviewed directory bounds/order, embedded PCX variants, RLE writer capacity and class	test-dcx passed ASan/UBSan; AROS runtime unverified
 dds	fixed	Honor declared top-level uncompressed pitch in row decoding and subresource offsets; validate pitch and bound array multiplication; correct alpha API comment	Padded-row regression failed before fix; test-dds passed ASan/UBSan; lower mips retain packed rows; AROS runtime unverified
+falcon	assessed	No confirmed defect; reviewed recognition, planar strides, Dune/Prism unpacking, Rembrandt traversal, encoder bounds and class	test-falcon passed ASan/UBSan; AROS runtime unverified
