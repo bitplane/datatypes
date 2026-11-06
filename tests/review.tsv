@@ -5,3 +5,4 @@ avs	assessed	No confirmed defect; reviewed endian detection, image traversal, al
 blp	assessed	No confirmed defect; reviewed mip bounds, palette and block decoding, writer and class	test-blp passed ASan/UBSan; AROS runtime unverified
 c64	assessed	No confirmed defect; reviewed format recognition, fixed layouts, RLE, FLI/interlace, constrained encoder and class	test-c64 passed ASan/UBSan; AROS runtime unverified
 cis	assessed	No confirmed defect; reviewed run bounds, termination and parity compatibility, thresholding, capacity and class	test-cis passed ASan/UBSan; AROS runtime unverified
+cmuwm	assessed	No codec defect confirmed; reviewed endian/header variants, size arithmetic, thresholding and class; descriptor matches big-endian magic only	test-cmuwm passed ASan/UBSan; AROS runtime unverified
