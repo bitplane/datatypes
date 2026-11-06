@@ -203,15 +203,15 @@ static enum codec_result decode_gd2(const uint8_t *data, size_t length, struct g
         free(buffer);
         return result;
     }
-    for (cy = 0; cy < down && result == CODEC_OK; cy++) {
-        for (cx = 0; cx < across; cx++, index += 8u) {
-            /* Chunks past the image hold no pixels; libgd skips them too. */
-            if (cx * chunk >= width || cy * chunk >= height)
-                continue;
+    /* Empty chunks need no work, even when the declared grid is enormous.
+       The compressed directory still uses the full declared row spacing. */
+    for (cy = 0; cy * chunk < height && result == CODEC_OK; cy++) {
+        for (cx = 0; cx * chunk < width; cx++) {
             w = width - cx * chunk < chunk ? width - cx * chunk : chunk;
             h = height - cy * chunk < chunk ? height - cy * chunk : chunk;
             size = (size_t)w * h * bpp;
             if (compressed) {
+                index = GD2_HEADER + ((size_t)cy * across + cx) * 8u;
                 offset = get32(data + index);
                 packed = get32(data + index + 4);
                 if ((offset | packed) & 0x80000000u) {

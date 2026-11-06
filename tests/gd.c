@@ -274,6 +274,13 @@ static void test_gd2(void)
             gd_free(&image);
         }
 
+    /* Empty chunks must not make work proportional to an untrusted grid. */
+    make_gd2(&o, 2, 3, 1, 1, 64, 0);
+    o.data[14] = o.data[15] = o.data[16] = o.data[17] = 255;
+    assert(decode(&o, &image) == CODEC_OK);
+    expect_tc(&image);
+    gd_free(&image);
+
     make_gd2(&o, 2, 4, 64, 64, 64, 0);
     assert(decode(&o, &image) == CODEC_OK);
     gd_free(&image);
