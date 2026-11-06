@@ -41,13 +41,13 @@ static enum codec_result unpack_row(const uint8_t *data, size_t length,
         if (c & 0x80u) {
             if (p >= length)
                 return CODEC_TRUNCATED;
-            if (row != NULL)
+            if (row != NULL && take != 0)
                 memset(row + n, data[p], take);
             p++;
         } else {
             if (length - p < run)
                 return CODEC_TRUNCATED;
-            if (row != NULL)
+            if (row != NULL && take != 0)
                 memcpy(row + n, data + p, take);
             p += run;
         }
