@@ -596,6 +596,29 @@ static void test_newicons(void)
     assert(info_decode(b->data, b->n, &icon, 1, &image) == CODEC_INVALID);
     assert(image.rgba == NULL);
 
+    /* An empty continuation without a NUL ends exactly at the allocation.
+       The tooltype parser permits non-NUL-terminated strings, but the image
+       reader must not fetch a character beyond their declared length. */
+    {
+        uint8_t *exact;
+        tts[2] = im1[0];
+        tts[3] = "IM1=";
+        tts[4] = NULL;
+        b->n = 0;
+        diskobject(b, &s);
+        planar(b, 4, 2, 2, 3, 0, pens4);
+        strings(b, &s);
+        b->n--; /* Remove the last tooltype's NUL and shorten its length. */
+        put32_at(b, b->n - 8, 4);
+        exact = malloc(b->n);
+        assert(exact != NULL);
+        memcpy(exact, b->data, b->n);
+        assert(info_parse(exact, b->n, &icon) == CODEC_OK);
+        assert(info_decode(exact, b->n, &icon, 1, &image) == CODEC_INVALID);
+        assert(image.rgba == NULL);
+        free(exact);
+    }
+
     /* Bad headers: zero width, zero or too many colours, unknown transparency. */
     {
         static const char *bad[] = {"IM1=B!\"!&", "IM1=B\"\"!!", "IM1=B\"\"%\"", "IM1=X\"\"!&", "IM1=B\"\"!"};

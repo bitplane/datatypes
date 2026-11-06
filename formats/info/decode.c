@@ -479,7 +479,7 @@ static enum codec_result newicon_read(struct newicon_reader *r, unsigned bits, u
                 r->zeros--;
                 value = 0;
             } else {
-                if (r->left == 0 && !next_line(r))
+                if (r->left == 0 && (!next_line(r) || r->left == 0))
                     return CODEC_INVALID;
                 c = *r->text++;
                 r->left--;
