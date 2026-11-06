@@ -189,6 +189,20 @@ static void test_formats(void)
     ftex_free(&im);
     assert(decode(used, 4) == CODEC_INVALID);
 
+    /* A broken format must not hide complete images counted after it. */
+    header(1, 1, 1, 2);
+    entry(0, FTEX_DXT1);
+    level(4, NULL); /* Too short for a DXT1 block. */
+    entry(1, FTEX_RGB);
+    rgb_level(1, 1, 70);
+    assert(count(used) == 1);
+    assert(ftex_decode(data, used, 0, &im) == CODEC_OK);
+    pixel(&im, 0, 0, 70, 70, 70, 255);
+    ftex_free(&im);
+    put32(data + 28, 0xffffffffu); /* Truncated first format too. */
+    assert(count(used) == 1);
+    assert(decode(used, 0) == CODEC_OK);
+
     /* Only unknown formats. */
     header(1, 1, 1, 1);
     entry(0, 2);

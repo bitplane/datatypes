@@ -11,3 +11,4 @@ dds	fixed	Honor declared top-level uncompressed pitch in row decoding and subres
 falcon	assessed	No confirmed defect; reviewed recognition, planar strides, Dune/Prism unpacking, Rembrandt traversal, encoder bounds and class	test-falcon passed ASan/UBSan; AROS runtime unverified
 farbfeld	fixed	Correct stale alpha API comment; reviewed channel rounding, size bounds, encoder and class	test-farbfeld passed ASan/UBSan including existing all-zero-alpha test; AROS runtime unverified
 fax	assessed	No codec defect confirmed; reviewed MH/T.6 runs, transition bounds, CALS parsing/orientation, streaming writer and banded class	test-fax passed ASan/UBSan; AROS runtime unverified
+ftex	fixed	Keep decode indices consistent with count when earlier format entries are damaged	Regression failed before fix; test-ftex passed ASan/UBSan with invalid and truncated preceding entries; AROS runtime unverified

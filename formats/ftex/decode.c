@@ -62,7 +62,7 @@ static enum codec_result check_header(const uint8_t *data, size_t length,
 static enum codec_result walk(const uint8_t *data, size_t length, unsigned long index,
                               struct level *target, unsigned long *count)
 {
-    enum codec_result result;
+    enum codec_result result, missing = CODEC_INVALID;
     uint32_t formats, levels, f, i, format, size;
     unsigned w, h;
     uint64_t at;
@@ -111,12 +111,14 @@ static enum codec_result walk(const uint8_t *data, size_t length, unsigned long 
             w = w > 1 ? w / 2u : 1u;
             h = h > 1 ? h / 2u : 1u;
         }
-        /* A later level cut short only matters when it is the one asked for. */
+        /* Counting skips damaged tails and continues with the next format.
+           Decoding must use the same numbering. Keep an error for a missing
+           index, but first look for a complete image in later formats. */
         if (target != NULL && result != CODEC_OK && *count == index)
-            return result;
+            missing = result;
         result = CODEC_OK;
     }
-    return target != NULL ? CODEC_INVALID : CODEC_OK;
+    return target != NULL ? missing : CODEC_OK;
 }
 
 enum codec_result ftex_count(const uint8_t *data, size_t length, unsigned long *count)
