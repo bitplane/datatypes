@@ -358,6 +358,11 @@ static void test_optional_structures(void)
     length = splice(stripe_resets, sizeof stripe_resets, JBIG_HEADER_SIZE + 4, floating,
                     sizeof floating);
     expect_bits(buffer, length, 37, 29, pattern);
+    /* A second BIE has its own header; it must not be scanned as stripe
+       data or allowed to change the dimensions of the first image. */
+    length = splice(at_moves, sizeof at_moves, sizeof at_moves, at_moves, sizeof at_moves);
+    expect_bits(buffer, length, 120, 60, periodic);
+
     length = splice(at_moves, sizeof at_moves, sizeof at_moves, trailing, sizeof trailing);
     expect_bits(buffer, length, 120, 60, periodic);
 }
@@ -397,6 +402,18 @@ static void test_new_length(void)
     put32(buffer + 8, 0xffffffffu);
     expect_bits(buffer, length + sizeof newlen, 37, 20, pattern);
     expect_error(buffer, length, CODEC_TOO_LARGE);
+    /* A comment between the final stripe and NEWLEN does not hide it. */
+    memcpy(buffer + length, "\xff\x07\0\0\0\1x", 7);
+    memcpy(buffer + length + 7, newlen, sizeof newlen);
+    expect_bits(buffer, length + 7 + sizeof newlen, 37, 20, pattern);
+    /* A later BIE's NEWLEN must not resize this BIE. */
+    {
+        size_t second = length + 7 + sizeof newlen;
+        memcpy(buffer + second, at_moves, sizeof at_moves);
+        memcpy(buffer + second + sizeof at_moves, newlen, sizeof newlen);
+        buffer[second + sizeof at_moves + 5] = 1;
+        expect_bits(buffer, second + sizeof at_moves + sizeof newlen, 37, 20, pattern);
+    }
     /* Just before the stripe's SDNORM. */
     length = encode_pattern(20, 29, 0);
     memcpy(buffer + length - 2, newlen, sizeof newlen);

@@ -100,17 +100,37 @@ static enum codec_result note_move(struct scan *scan, const uint8_t *p)
     return CODEC_OK;
 }
 
+/* Count entities before applying the output-size limit: NEWLEN may reduce
+   an initially unknown (0xffffffff) height. Use 64 bits for that case. */
+static uint64_t entity_count(const struct header *h, uint32_t height)
+{
+    unsigned d;
+    uint64_t rows = height, stripes;
+    for (d = 0; d < h->d; d++)
+        rows = (rows + 1u) / 2u;
+    stripes = rows / h->l0 + (rows % h->l0 != 0);
+    return stripes * (h->d + 1u) * h->planes;
+}
+
 /* Walk the bi-level image data: stripe data entities, and the floating
    marker segments between them. An entity cut off by the end of the data
    isn't counted. */
 static enum codec_result scan_data(const uint8_t *data, size_t length, size_t pos,
-                                   struct scan *scan)
+                                   struct scan *scan, const struct header *h)
 {
     while (pos < length) {
         size_t start = pos, end = 0;
         int ended = 0, marker;
 
-        if (scan->entities != NULL && scan->count == scan->limit)
+        uint32_t height = scan->have_newlen && scan->newlen < h->yd ? scan->newlen : h->yd;
+        uint64_t limit = scan->entities != NULL ? scan->limit : entity_count(h, height);
+
+        /* NEWLEN (possibly after a comment) may follow the final stripe.
+           Otherwise stop at this BIE's
+           boundary, before treating a following BIE header as coded data. */
+        if (scan->count >= limit &&
+            !(length - pos >= 2 && data[pos] == ESC &&
+              (data[pos + 1] == NEWLEN || data[pos + 1] == COMMENT)))
             return CODEC_OK;
         if (data[pos] == ESC) {
             if (length - pos < 2)
@@ -506,7 +526,7 @@ enum codec_result jbig_decode(const uint8_t *data, size_t length, struct jbig_im
     if (result != CODEC_OK)
         return result;
     memset(&scan, 0, sizeof scan);
-    result = scan_data(data, length, start, &scan);
+    result = scan_data(data, length, start, &scan, &h);
     if (result != CODEC_OK)
         return result;
     if (scan.have_newlen && scan.newlen < h.yd) {
@@ -544,7 +564,7 @@ enum codec_result jbig_decode(const uint8_t *data, size_t length, struct jbig_im
     scan.entities = entities;
     scan.moves = moves;
     scan.limit = needed;
-    result = scan_data(data, length, start, &scan);
+    result = scan_data(data, length, start, &scan, &h);
     if (result != CODEC_OK)
         goto done;
 
