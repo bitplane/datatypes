@@ -449,6 +449,17 @@ static void test_crc(void)
 
 int main(void)
 {
+    /* The class must reject these before allocating or collecting RGBA rows.
+       32768 squared times four would wrap a 32-bit allocation size to zero. */
+    assert(ora_rgba_size(32768, 32768) == 0);
+    assert(ora_rgba_size(65535, 65535) == 0);
+    assert(ora_rgba_size(0, 1) == 0);
+    assert(ora_rgba_size(1, 0) == 0);
+    assert(ora_rgba_size(65536, 1) == 0);
+    assert(ora_rgba_size(4096, 4097) == 0);
+    assert(ora_rgba_size(4096, 4096) == 64u * 1024u * 1024u);
+    assert(ora_rgba_size(65535, 1) == 65535u * 4u);
+
     test_crc();
     test_round_trip();
     test_types();

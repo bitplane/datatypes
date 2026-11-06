@@ -63,7 +63,7 @@ IPTR ORA__DTM_WRITE(Class *cl, Object *obj, struct dtWrite *msg)
     struct gather g = { NULL, 0 };
     ULONG width, height;
     uint8_t *out;
-    size_t length;
+    size_t length, rgba_size;
     IPTR success = FALSE;
 
     if (msg->dtw_Mode != DTWM_RAW)
@@ -73,7 +73,12 @@ IPTR ORA__DTM_WRITE(Class *cl, Object *obj, struct dtWrite *msg)
         return TRUE;
     if (!dt_picture_size(obj, &width, &height))
         return FALSE;
-    g.rgba = AllocVec(width * height * 4u, MEMF_ANY);
+    rgba_size = ora_rgba_size(width, height);
+    if (rgba_size == 0) {
+        SetIoErr(ERROR_OBJECT_TOO_LARGE);
+        return FALSE;
+    }
+    g.rgba = AllocVec(rgba_size, MEMF_ANY);
     if (g.rgba == NULL)
         return FALSE;
     if (dt_each_row(cl, obj, gather_row, &g) &&

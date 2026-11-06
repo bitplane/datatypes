@@ -123,6 +123,14 @@ static uint8_t *thumbnail(const uint8_t *rgba, unsigned width, unsigned height,
     return out;
 }
 
+size_t ora_rgba_size(unsigned width, unsigned height)
+{
+    if (width == 0 || height == 0 || width > PNG_MAX_SIDE || height > PNG_MAX_SIDE ||
+        width > PNG_MAX_PIXELS / height)
+        return 0;
+    return (size_t)width * height * 4u;
+}
+
 enum codec_result ora_encode(const uint8_t *rgba, unsigned width, unsigned height,
                              uint8_t **out, size_t *out_length)
 {

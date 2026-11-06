@@ -14,6 +14,9 @@ struct ora_image {
 enum codec_result ora_decode(const uint8_t *data, size_t length, struct ora_image *image);
 void ora_free(struct ora_image *image);
 
+/* RGBA bytes for a supported image, or zero for invalid/oversized dimensions. */
+size_t ora_rgba_size(unsigned width, unsigned height);
+
 /* Write a one-layer OpenRaster file. The caller frees *out. */
 enum codec_result ora_encode(const uint8_t *rgba, unsigned width, unsigned height,
                              uint8_t **out, size_t *out_length);
