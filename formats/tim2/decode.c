@@ -96,7 +96,7 @@ static enum codec_result parse(const uint8_t *p, size_t length,
         return CODEC_TOO_LARGE;
     if (header_size > length)
         return CODEC_TRUNCATED;
-    out->level_sizes = p + TIM2_MIPMAP_SIZES;
+    out->level_sizes = out->levels > 1 ? p + TIM2_MIPMAP_SIZES : NULL;
     for (i = 0; i < out->levels; i++) {
         need = level_bytes(out, i);
         size = level_size(out, i);

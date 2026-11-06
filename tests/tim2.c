@@ -307,6 +307,17 @@ static void twenty_four_bit(void)
     expect(&image, 2, 120, 140, 160, 255);
     tim2_free(&image);
     truncations(length);
+    /* No mipmap-size pointer may be formed beyond this short allocation. */
+    {
+        uint8_t *exact = malloc(length);
+        assert(exact != NULL);
+        memcpy(exact, file, length);
+        assert(tim2_count(exact, length) == 1);
+        assert(tim2_decode(exact, length, 0, &image) == CODEC_OK);
+        expect(&image, 2, 120, 140, 160, 255);
+        tim2_free(&image);
+        free(exact);
+    }
 }
 
 /* Every alpha value: 0x80 is opaque, more saturates. A direct-colour

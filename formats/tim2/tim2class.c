@@ -106,7 +106,8 @@ IPTR Tim2__DTM_WRITE(Class *cl, Object *obj, struct dtWrite *msg)
         return FALSE;
     /* Opaque pictures save as 24-bit; any translucency needs 32-bit. */
     w.alpha = FALSE;
-    dt_each_row(cl, obj, find_alpha, &w.alpha);
+    if (!dt_each_row(cl, obj, find_alpha, &w.alpha) && !w.alpha)
+        return FALSE;
     if (!tim2_make_header(width, height, w.alpha, header))
         return FALSE;
     w.file = msg->dtw_FileHandle;
