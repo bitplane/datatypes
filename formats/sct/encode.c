@@ -55,11 +55,12 @@ static void put_inches(uint8_t *p, unsigned pixels)
 int sct_make_header(unsigned width, unsigned height, int gray,
                     uint8_t header[SCT_HEADER_SIZE])
 {
-    uint8_t *par = header + 1024;
+    uint8_t *par;
 
     if (header == NULL || width == 0 || height == 0 ||
         width > 65535u || height > 65535u)
         return 0;
+    par = header + 1024;
     memset(header, 0, SCT_HEADER_SIZE);
     /* The name is space-padded ASCII; leave it blank. */
     memset(header, ' ', 80);

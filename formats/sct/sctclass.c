@@ -81,7 +81,9 @@ IPTR Sct__DTM_WRITE(Class *cl, Object *obj, struct dtWrite *msg)
         return FALSE;
     w.file = msg->dtw_FileHandle;
     w.gray = 1;
-    dt_each_row(cl, obj, check_gray, &w);
+    /* A stopped scan is expected only when a colour row was found. */
+    if (!dt_each_row(cl, obj, check_gray, &w) && w.gray)
+        return FALSE;
     header = AllocVec(SCT_HEADER_SIZE + sct_line_size(width, w.gray),
                       MEMF_ANY);
     if (header == NULL)

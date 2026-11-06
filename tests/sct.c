@@ -158,6 +158,10 @@ static void test_malformed(void)
     size_t full;
 
     assert(sct_decode(NULL, 0, &image) == CODEC_TRUNCATED);
+    {
+        const uint8_t short_header[82] = { [80] = 'C', [81] = 'T' };
+        assert(sct_decode(short_header, sizeof short_header, &image) == CODEC_TRUNCATED);
+    }
     assert(sct_decode(data, 0, NULL) == CODEC_INVALID);
     make(3, 2, 3, 7);
     full = size;
@@ -320,6 +324,7 @@ static void test_encoder(void)
     float_field(7200, "+.10000000E+03");
     float_field(65535, "+.91020833E+03");
     assert(!sct_make_header(0, 1, 0, header));
+    assert(!sct_make_header(1, 1, 0, NULL));
     assert(!sct_make_header(1, 0, 0, header));
     assert(!sct_make_header(65536, 1, 0, header));
     assert(!sct_make_header(1, 65536, 1, header));

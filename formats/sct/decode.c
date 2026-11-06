@@ -54,7 +54,7 @@ void sct_free(struct sct_image *image)
 enum codec_result sct_decode(const uint8_t *data, size_t length,
                              struct sct_image *image)
 {
-    const uint8_t *par = data + SCT_PARAMETERS;
+    const uint8_t *par;
     static const uint8_t no_ink = 255;
     const uint8_t *sep[4];
     unsigned present[4];
@@ -72,6 +72,7 @@ enum codec_result sct_decode(const uint8_t *data, size_t length,
         return CODEC_INVALID;
     if (length < SCT_DATA)
         return CODEC_TRUNCATED;
+    par = data + SCT_PARAMETERS;
     count = par[1];
     mask = (unsigned)par[2] << 8 | par[3];
     /* Writers that leave the mask empty get the usual meaning of the count. */
