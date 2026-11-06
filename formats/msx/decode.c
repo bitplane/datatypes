@@ -651,6 +651,11 @@ enum codec_result msx_decode(const uint8_t *data, size_t length,
     image->rgba = NULL;
     if (data == NULL)
         return CODEC_TRUNCATED;
+    /* Screen loaders form VRAM pointers after the seven-byte header. Keep
+       even pointer formation inside the input object on truncated files.
+       SRI is headerless; unknown extensions retain CODEC_INVALID below. */
+    if (family != NONE && family != SRI && length < HEADER)
+        return CODEC_TRUNCATED;
 
     switch (family) {
     case SC2: result = screen2(data, length, 2, image); break;
