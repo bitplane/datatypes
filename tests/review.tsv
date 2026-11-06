@@ -4,3 +4,4 @@ ani	fixed	Odd short LIST size skipped following frame; align recovered boundary	
 avs	assessed	No confirmed defect; reviewed endian detection, image traversal, alpha conventions, writer and class	test-avs passed ASan/UBSan; AROS runtime unverified
 blp	assessed	No confirmed defect; reviewed mip bounds, palette and block decoding, writer and class	test-blp passed ASan/UBSan; AROS runtime unverified
 c64	assessed	No confirmed defect; reviewed format recognition, fixed layouts, RLE, FLI/interlace, constrained encoder and class	test-c64 passed ASan/UBSan; AROS runtime unverified
+cis	assessed	No confirmed defect; reviewed run bounds, termination and parity compatibility, thresholding, capacity and class	test-cis passed ASan/UBSan; AROS runtime unverified
