@@ -16,6 +16,7 @@
 #include "common/dtfile.h"
 #include "common/dtpicture.h"
 #include "common/ico.h"
+#include "select.h"
 #include "common/icoenc.h"
 
 #define MAX_ICO_FILE (128L * 1024L * 1024L)
@@ -54,11 +55,11 @@ static LONG load_ico(Class *cl, Object *obj, const struct request *request)
     if (error == 0) {
         if (request->has_index) {
             index = request->index;
-            error = dt_error(ico_entry(input, (size_t)size, index, &entry));
+            error = dt_error(ico_checked_entry(input, (size_t)size, index, &entry));
         } else {
-            error = dt_error(ico_best(input, (size_t)size, &index));
+            error = dt_error(ico_checked_best(input, (size_t)size, &index));
             if (error == 0)
-                error = dt_error(ico_entry(input, (size_t)size, index, &entry));
+                error = dt_error(ico_checked_entry(input, (size_t)size, index, &entry));
         }
     }
     if (error == 0) {

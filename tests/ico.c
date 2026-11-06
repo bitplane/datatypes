@@ -1,4 +1,4 @@
-#include "../common/ico.h"
+#include "../formats/ico/select.h"
 #include "../common/icoenc.h"
 #include <assert.h>
 #include <stdio.h>
@@ -55,7 +55,7 @@ static enum codec_result decode(const uint8_t *data, size_t length, unsigned ind
                                 struct ico_image *image)
 {
     struct ico_entry entry;
-    enum codec_result result = ico_entry(data, length, index, &entry);
+    enum codec_result result = ico_checked_entry(data, length, index, &entry);
     image->rgba = NULL;
     if (result != CODEC_OK) {
         assert(entry.width == 0 && entry.height == 0);
@@ -361,64 +361,106 @@ static void directory_tests(void)
 
     assert(ico_directory(file, len, &count, &cursor) == CODEC_OK);
     assert(count == 4 && cursor);
-    assert(ico_entry(file, len, 0, &entry) == CODEC_OK);
+    assert(ico_checked_entry(file, len, 0, &entry) == CODEC_OK);
     assert(!entry.png && entry.width == 1 && entry.depth == 24);
     assert(entry.hot_x == 3 && entry.hot_y == 7);
-    assert(ico_entry(file, len, 1, &entry) == CODEC_OK);
+    assert(ico_checked_entry(file, len, 1, &entry) == CODEC_OK);
     assert(entry.png && entry.width == 2 && entry.height == 1 && entry.depth == 8);
     assert(entry.offset == 6 + 64 + sizes[0] && entry.size == sizes[1]);
     assert(entry.hot_x == 4 && entry.hot_y == 8);
-    assert(ico_entry(file, len, 2, &entry) == CODEC_OK);
+    assert(ico_checked_entry(file, len, 2, &entry) == CODEC_OK);
     assert(entry.png && entry.depth == 32);
-    assert(ico_entry(file, len, 3, &entry) == CODEC_TRUNCATED);
+    assert(ico_checked_entry(file, len, 3, &entry) == CODEC_TRUNCATED);
     /* Largest, then deepest, skipping unreadable entries. */
-    assert(ico_best(file, len, &index) == CODEC_OK && index == 2);
+    assert(ico_checked_best(file, len, &index) == CODEC_OK && index == 2);
     /* A PNG entry is not decoded here. */
     {
         struct ico_image image;
-        assert(ico_entry(file, len, 2, &entry) == CODEC_OK);
+        assert(ico_checked_entry(file, len, 2, &entry) == CODEC_OK);
         assert(ico_decode_bmp(file, len, &entry, &image) == CODEC_INVALID);
     }
     /* Icons have no hotspot. */
     le16(file + 2, 1);
-    assert(ico_entry(file, len, 0, &entry) == CODEC_OK && entry.hot_x == 0 && entry.hot_y == 0);
+    assert(ico_checked_entry(file, len, 0, &entry) == CODEC_OK && entry.hot_x == 0 && entry.hot_y == 0);
 
     /* The first of equal entries wins. */
     images[1] = c;
     sizes[1] = sizes[2];
     len = icon(1, 3, images, sizes);
-    assert(ico_best(file, len, &index) == CODEC_OK && index == 1);
+    assert(ico_checked_best(file, len, &index) == CODEC_OK && index == 1);
+
+    /* A larger PNG with an impossible colour-depth combination must not
+       hide the usable BMP entry. Repeat for each unsupported IHDR method. */
+    {
+        unsigned bad;
+        images[1] = b; sizes[1] = 46;
+        for (bad = 0; bad < 6; bad++) {
+            png(b, 32, 32, 8, 6);
+            switch (bad) {
+            case 0: b[24] = 4; break;  /* RGBA needs 8 or 16 bits */
+            case 1: b[24] = 16; b[25] = 3; break; /* palette max 8 */
+            case 2: b[11] = 12; break; /* IHDR length */
+            case 3: b[26] = 1; break;  /* compression method */
+            case 4: b[27] = 1; break;  /* filter method */
+            default: b[28] = 2; break; /* interlace method */
+            }
+            len = icon(1, 2, images, sizes);
+            assert(ico_checked_best(file, len, &index) == CODEC_OK && index == 0);
+            assert(ico_checked_entry(file, len, 1, &entry) == CODEC_INVALID);
+            assert(entry.width == 0 && entry.height == 0);
+        }
+    }
+
+    /* Every legal PNG colour/depth combination remains selectable. */
+    {
+        static const unsigned types[] = {0, 2, 3, 4, 6};
+        static const unsigned depths[] = {1, 2, 4, 8, 16};
+        unsigned t, d;
+        for (t = 0; t < sizeof types / sizeof types[0]; t++) {
+            for (d = 0; d < sizeof depths / sizeof depths[0]; d++) {
+                int valid = types[t] == 0 ||
+                    (types[t] == 3 ? depths[d] <= 8 : depths[d] >= 8);
+                png(b, 32, 32, depths[d], types[t]);
+                b[28] = 1; /* Adam7 is valid too. */
+                len = icon(1, 2, images, sizes);
+                assert(ico_checked_entry(file, len, 1, &entry) ==
+                       (valid ? CODEC_OK : CODEC_INVALID));
+                assert(ico_checked_best(file, len, &index) == CODEC_OK);
+                assert(index == (valid ? 1u : 0u));
+            }
+        }
+    }
 
     /* Bad PNG headers. */
     png(b, 2, 1, 3, 3);
     images[1] = b; sizes[1] = 46;
     len = icon(1, 2, images, sizes);
-    assert(ico_entry(file, len, 1, &entry) == CODEC_INVALID);
+    assert(ico_checked_entry(file, len, 1, &entry) == CODEC_INVALID);
     png(b, 2, 1, 8, 5);
     len = icon(1, 2, images, sizes);
-    assert(ico_entry(file, len, 1, &entry) == CODEC_INVALID);
+    assert(ico_checked_entry(file, len, 1, &entry) == CODEC_INVALID);
     png(b, 0, 1, 8, 2);
     len = icon(1, 2, images, sizes);
-    assert(ico_entry(file, len, 1, &entry) == CODEC_INVALID);
+    assert(ico_checked_entry(file, len, 1, &entry) == CODEC_INVALID);
     png(b, 70000, 1, 8, 2);
     len = icon(1, 2, images, sizes);
-    assert(ico_entry(file, len, 1, &entry) == CODEC_TOO_LARGE);
+    assert(ico_checked_entry(file, len, 1, &entry) == CODEC_TOO_LARGE);
     png(b, 2, 1, 8, 2);
     memcpy(b + 12, "IDAT", 4);
     len = icon(1, 2, images, sizes);
-    assert(ico_entry(file, len, 1, &entry) == CODEC_INVALID);
+    assert(ico_checked_entry(file, len, 1, &entry) == CODEC_INVALID);
     /* Only the BMP is readable, so it is the best. */
-    assert(ico_best(file, len, &index) == CODEC_OK && index == 0);
+    assert(ico_checked_best(file, len, &index) == CODEC_OK && index == 0);
     /* With nothing readable, the first error is reported. */
     images[0] = d; sizes[0] = 20;
     len = icon(1, 1, images, sizes);
-    assert(ico_best(file, len, &index) == CODEC_TRUNCATED);
+    assert(ico_checked_best(file, len, &index) == CODEC_TRUNCATED);
     images[1] = d; sizes[1] = 20;
     le32(b + 16, 0);
     images[0] = b; sizes[0] = 46;
     len = icon(1, 2, images, sizes);
-    assert(ico_best(file, len, &index) == CODEC_INVALID);
-    assert(ico_best(file, 3, &index) == CODEC_TRUNCATED);
+    assert(ico_checked_best(file, len, &index) == CODEC_INVALID);
+    assert(ico_checked_best(file, 3, &index) == CODEC_TRUNCATED);
 }
 
 static void encode_tests(void)
@@ -452,7 +494,7 @@ static void encode_tests(void)
             memcpy(file, out, size);
             {
                 struct ico_entry entry;
-                assert(ico_entry(file, size, 0, &entry) == CODEC_OK);
+                assert(ico_checked_entry(file, size, 0, &entry) == CODEC_OK);
                 assert(entry.depth == 32 && entry.hot_x == w - 1 && entry.hot_y == h - 1);
             }
             assert(decode(file, size, 0, &image) == CODEC_OK);
