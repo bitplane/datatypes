@@ -14,7 +14,7 @@ unsigned pdb_padded_width(unsigned width)
 
 static int valid(unsigned width, unsigned depth)
 {
-    return width != 0 && pdb_padded_width(width) <= 65535u &&
+    return width != 0 && width <= 65520u &&
            (depth == 1 || depth == 2 || depth == 4);
 }
 
@@ -91,10 +91,11 @@ size_t pdb_encode_row(const uint8_t *rgba, unsigned width, unsigned depth,
                       uint8_t *output, size_t capacity)
 {
     size_t bytes = pdb_row_bytes(width, depth);
-    unsigned x, top = (1u << depth) - 1u;
+    unsigned x, top;
 
     if (rgba == NULL || output == NULL || bytes == 0 || capacity < bytes)
         return 0;
+    top = (1u << depth) - 1u;
     /* Zero is white, so the padding needs nothing. */
     memset(output, 0, bytes);
     for (x = 0; x < width; x++, rgba += 4) {

@@ -1,6 +1,7 @@
 #include "../formats/pdb/decode.h"
 #include "../formats/pdb/encode.h"
 #include <assert.h>
+#include <limits.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -208,6 +209,9 @@ int main(void)
     assert(pdb_decode(data, 100, NULL) == CODEC_INVALID);
 
     /* Writer: widths pad to 16; unsupported sizes and depths. */
+    assert(pdb_encode_row(rgba, 1, sizeof(unsigned) * CHAR_BIT, row, sizeof row) == 0);
+    assert(!pdb_make_header(NULL, UINT_MAX, 1, 1, header));
+    assert(pdb_row_bytes(UINT_MAX, 1) == 0);
     assert(pdb_padded_width(1) == 16 && pdb_padded_width(16) == 16 && pdb_padded_width(17) == 32);
     assert(!pdb_make_header(NULL, 0, 1, 1, header));
     assert(!pdb_make_header(NULL, 1, 0, 1, header));
