@@ -149,6 +149,14 @@ static void test_sizes(void)
     put32(file + list + 4, (uint32_t)(length - list - 8 - 4));
     assert(ani_count(file, length, &count) == CODEC_OK && count == 3);
     expect_pixel(file, length, 2, 48, 48, blue);
+    /* An odd, short LIST size must not pad the recovered even boundary. */
+    length = three_frames();
+    put32(file + list + 4, (uint32_t)(length - list - 8 - 1));
+    add_frame(4, 4, red, 0, 0);
+    finish();
+    assert(ani_count(file, used, &count) == CODEC_OK && count == 4);
+    expect_pixel(file, used, 3, 4, 4, red);
+    length = three_frames();
     /* A LIST that claims more than the file holds. */
     put32(file + list + 4, (uint32_t)(length - list - 8 + 2));
     assert(ani_count(file, length, &count) == CODEC_TRUNCATED);

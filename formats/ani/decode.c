@@ -46,7 +46,7 @@ static enum codec_result walk(const uint8_t *data, size_t length, size_t pos, si
             s->count++;
         }
         /* Chunks are padded to an even size; the last one's pad may be missing. */
-        if (size & 1u)
+        if (next & 1u)
             next++;
         if (next > end) {
             pos = next;

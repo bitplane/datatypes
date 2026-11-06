@@ -1,0 +1,3 @@
+datatype	status	findings	verification
+alias	fixed	RLA row capacity underestimated mixed runs (9a8d4cd)	ASan regression failed before fix; test-alias passed after
+ani	fixed	Odd short LIST size skipped following frame; align recovered boundary	Regression failed before fix; test-ani passed with ASan/UBSan
