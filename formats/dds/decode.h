@@ -11,7 +11,7 @@ struct dds_image { unsigned width, height; uint8_t *rgba; };
    depth slice of every level. Only images wholly inside the file count. */
 enum codec_result dds_count(const uint8_t *data, size_t length, unsigned long *count);
 /* Decode one image to straight RGBA. Premultiplied alpha is divided out and
-   an alpha channel that is zero everywhere is shown opaque. */
+   declared alpha is preserved, including all-zero alpha. */
 enum codec_result dds_decode(const uint8_t *data, size_t length, unsigned long index,
                              struct dds_image *image);
 void dds_free(struct dds_image *image);

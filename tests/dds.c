@@ -205,6 +205,57 @@ static void test_masks(void)
     dds_free(&im);
 }
 
+static void test_pitch(void)
+{
+    struct dds_image im;
+    size_t o = header((struct hdr){ .width = 1, .height = 2,
+        .dx10 = 1, .format = 28, .array = 2, .levels = 2 });
+    unsigned element;
+    put32(data + 8, 0x100f);
+    put32(data + 20, 8); /* Four pixel bytes, four padding bytes per row. */
+    for (element = 0; element < 2; element++) {
+        uint8_t *p = data + o + element * 20u;
+        memset(p, 0xee, 20);
+        memcpy(p, "\x01\x02\x03\xff", 4);
+        memcpy(p + 8, "\x04\x05\x06\xff", 4);
+        memcpy(p + 16, "\x07\x08\x09\xff", 4);
+    }
+    assert(decode(o + 40, 0, &im) == CODEC_OK);
+    pixel(&im, 0, 1, 4, 5, 6, 255);
+    dds_free(&im);
+    assert(count(o + 40) == 4);
+    for (element = 0; element < 2; element++) {
+        assert(decode(o + 40, element * 2 + 1, &im) == CODEC_OK);
+        pixel(&im, 0, 0, 7, 8, 9, 255);
+        dds_free(&im);
+    }
+    assert(decode(o + 40, 2, &im) == CODEC_OK);
+    pixel(&im, 0, 1, 4, 5, 6, 255);
+    dds_free(&im);
+    assert(count(o + 15) == 0);
+    assert(decode(o + 15, 0, &im) == CODEC_TRUNCATED);
+    put32(data + 20, 3); /* A row cannot be smaller than its pixels. */
+    assert(decode(o + 40, 0, &im) == CODEC_INVALID);
+    put32(data + 20, 0xffffffffu);
+    assert(count(o + 40) == 0);
+    assert(decode(o + 40, 0, &im) == CODEC_TRUNCATED);
+    /* Large array strides must be rejected before offset multiplication. */
+    put32(data + 12, 65535);
+    put32(data + 140, 0xffffffffu);
+    assert(decode(o + 40, 0xfffffffcUL, &im) == CODEC_TRUNCATED);
+
+    /* Legacy 24-bit rows with byte padding. */
+    o = header((struct hdr){ .width = 1, .height = 2, .flags = PF_RGB,
+        .bits = 24, .mask = { 0xff, 0xff00, 0xff0000 } });
+    put32(data + 8, 0x100f);
+    put32(data + 20, 4);
+    memcpy(data + o, "\x01\x02\x03\xee\x04\x05\x06\xee", 8);
+    assert(decode(o + 8, 0, &im) == CODEC_OK);
+    pixel(&im, 0, 1, 4, 5, 6, 255);
+    dds_free(&im);
+
+}
+
 static void test_gray_and_palette(void)
 {
     struct dds_image im;
@@ -702,6 +753,7 @@ static void test_encode(void)
 int main(void)
 {
     test_masks();
+    test_pitch();
     test_gray_and_palette();
     test_bc1_to_bc5();
     test_bc7();

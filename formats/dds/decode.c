@@ -110,6 +110,7 @@ struct layout {
     const uint8_t *palette;     /* PALETTE: 256 entries of R, G, B, A */
     uint32_t width, height, depth;
     unsigned levels;
+    uint32_t pitch;             /* declared top-level uncompressed row size */
     int volume;
     uint32_t elements;          /* array slices times cube faces */
     size_t offset;              /* of the first image */
@@ -322,6 +323,11 @@ static enum codec_result parse(const uint8_t *data, size_t length, struct layout
         levels = 1;
     if (levels > bits_needed(largest))
         return CODEC_INVALID;
+    if ((l->kind == MASKED || l->kind == PALETTE) && (get32(data + 8) & 8u)) {
+        l->pitch = get32(data + 20);
+        if (l->pitch < l->width * (l->kind == MASKED ? l->pixel_bytes : 1u))
+            return CODEC_INVALID;
+    }
     l->levels = levels;
     return CODEC_OK;
 }
@@ -332,7 +338,16 @@ static uint32_t level_size(uint32_t size, unsigned level)
     return size ? size : 1;
 }
 
-/* Bytes in one depth slice of a level. At most 2^32 * 4. */
+/* The header describes the top level; lower levels use packed rows. */
+static uint64_t row_bytes(const struct layout *l, unsigned level)
+{
+    if (level == 0 && l->pitch != 0)
+        return l->pitch;
+    return (uint64_t)level_size(l->width, level) *
+           (l->kind == MASKED ? l->pixel_bytes : 1u);
+}
+
+/* Bytes in one depth slice, including any declared top-level padding. */
 static uint64_t slice_bytes(const struct layout *l, unsigned level)
 {
     uint64_t w = level_size(l->width, level), h = level_size(l->height, level);
@@ -340,9 +355,8 @@ static uint64_t slice_bytes(const struct layout *l, unsigned level)
     case BC1: case BC4:
         return ((w + 3u) / 4u) * ((h + 3u) / 4u) * 8u;
     case MASKED:
-        return w * h * l->pixel_bytes;
     case PALETTE:
-        return w * h;
+        return row_bytes(l, level) * h;
     default:
         return ((w + 3u) / 4u) * ((h + 3u) / 4u) * 16u;
     }
@@ -533,6 +547,10 @@ enum codec_result dds_decode(const uint8_t *data, size_t length, unsigned long i
     element(&l, &per_element, &element_bytes);
     if (index / per_element >= l.elements)
         return CODEC_INVALID;
+    /* Bound the element before multiplying: huge arrays can overflow even
+       a 64-bit offset, despite each individual dimension being bounded. */
+    if (index / per_element > (length - l.offset) / element_bytes)
+        return CODEC_TRUNCATED;
     offset = (uint64_t)(index / per_element) * element_bytes;
     index %= per_element;
     for (level = 0; index >= level_depth(&l, level); level++) {
@@ -550,9 +568,12 @@ enum codec_result dds_decode(const uint8_t *data, size_t length, unsigned long i
     image->rgba = malloc(pixels * 4u);
     if (image->rgba == NULL)
         return CODEC_NO_MEMORY;
-    if (l.kind == MASKED || l.kind == PALETTE)
-        decode_pixels(&l, data + l.offset + offset, image->rgba, pixels);
-    else
+    if (l.kind == MASKED || l.kind == PALETTE) {
+        unsigned y;
+        for (y = 0; y < h; y++)
+            decode_pixels(&l, data + l.offset + offset + y * row_bytes(&l, level),
+                          image->rgba + (size_t)y * w * 4u, w);
+    } else
         decode_blocks(&l, data + l.offset + offset, image->rgba, w, h);
     fix_alpha(l.alpha, image->rgba, pixels);
     image->width = w;
