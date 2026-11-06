@@ -1278,7 +1278,8 @@ static enum codec_result prepare(struct ctx *c, long index, int depth)
     const struct mode_info *info;
     long i;
 
-    if (depth > MAX_DEPTH)
+    /* A group renders into depth + 1 even when it has no children. */
+    if (depth > MAX_DEPTH || (l->group && depth == MAX_DEPTH))
         return CODEC_INVALID;
     n->mode = allowed_mode(l->mode, l->group) ? l->mode : MODE_NORMAL;
     info = &modes[n->mode];

@@ -983,6 +983,22 @@ static void test_xcf_groups(void)
         else
             expect_fail(CODEC_INVALID);
     }
+    /* Empty innermost groups still need their own accumulator band. */
+    for (mode = 32; mode <= 33; mode++) {
+        for (i = 0; i < mode; i++) {
+            xlayer_init(&l[i], 2, 2, 1, NULL);
+            l[i].group = 1;
+            memset(l[i].path, 0, sizeof l[i].path);
+            l[i].depth = i + 1;
+        }
+        build_xcf(11, 2, 2, 0, 150, 0, NULL, 0, l, mode);
+        if (mode == 32) {
+            memset(expect, 0, sizeof expect);
+            expect_xcf(2, 2, expect, 0);
+        } else {
+            expect_fail(CODEC_INVALID);
+        }
+    }
 }
 
 static void test_xcf_formats(void)
