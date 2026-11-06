@@ -131,7 +131,7 @@ struct picture {
 
 static enum codec_result tiny(const uint8_t *data, size_t length, struct picture *pic)
 {
-    size_t header, controls, words, control, value, end;
+    size_t header, controls, words, control, control_end, value, end;
     unsigned n = 0, mode;
 
     if (length < 1)
@@ -146,7 +146,8 @@ static enum codec_result tiny(const uint8_t *data, size_t length, struct picture
     controls = be16(data + header + 32);
     words = be16(data + header + 34);
     control = header + 36u;
-    value = control + controls;
+    control_end = control + controls;
+    value = control_end;
     end = value + words * 2u;
     if (length < end)
         return CODEC_TRUNCATED;
@@ -162,11 +163,11 @@ static enum codec_result tiny(const uint8_t *data, size_t length, struct picture
         int literal;
         unsigned x;
 
-        if (control >= value)
+        if (control >= control_end)
             return CODEC_INVALID;
         x = data[control++];
         if (x < 2) {
-            if (control + 2 > value)
+            if (control_end - control < 2)
                 return CODEC_INVALID;
             count = be16(data + control);
             control += 2;
@@ -462,9 +463,9 @@ static enum codec_result pablo(const uint8_t *data, size_t length, struct pictur
     if (data[i] > 2 || data[i + 1] != 0)
         return CODEC_INVALID;
     pic->mode = data[i];
-    pic->palette = data + i + 4u;
     if (length < i + 36u + STPAINT_SCREEN)
         return CODEC_TRUNCATED;
+    pic->palette = data + i + 4u;
     memcpy(pic->screen, data + i + 36u, STPAINT_SCREEN);
     return CODEC_OK;
 }

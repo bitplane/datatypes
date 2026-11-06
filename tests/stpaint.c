@@ -131,6 +131,20 @@ static void random_palette(uint8_t pal[32], unsigned mask)
 
 static unsigned words[16000];
 
+static void tiny_missing_controls(void)
+{
+    /* One repeat command cannot fill the screen. Data words that look like
+       literal commands must not extend the declared control stream. */
+    memset(file, 0, 37);
+    file[34] = 1;
+    file[35] = 16000u >> 8;
+    file[36] = 16000u & 255u;
+    file[37] = 2;
+    memset(file + 38, 0x80, 32000);
+    len = 32038;
+    status("broken.tny", CODEC_INVALID);
+}
+
 static void tiny_file(unsigned mode, const uint8_t pal[32], size_t tail)
 {
     unsigned i, n, set, column, y, ctrl_at, nctrl = 0, nwords = 0;
@@ -758,6 +772,7 @@ static void test_writer(void)
 
 int main(void)
 {
+    tiny_missing_controls();
     struct stpaint_image img;
 
     setvbuf(stdout, NULL, _IONBF, 0);
